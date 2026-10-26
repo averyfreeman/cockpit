@@ -66,11 +66,25 @@ EOF
     clone_from_cache "${sha}"
 }
 
+# npm runs in an Alpine container, but the resulting node_modules cache is used
+# on glibc-based Linux development and CI systems.  Override Alpine's musl
+# detection so packages with libc-specific optional dependencies (such as
+# Oxlint) are installed for the systems that consume this cache.
+npm_download() {
+    bots/npm sh '
+        set -eux
+        tee package.json >/dev/null
+        npm install --ignore-scripts --libc=glibc >&2 & wait -n
+        cp package.json node_modules/.package.json
+        tar --directory=node_modules --exclude=".claude" --create .
+    '
+}
+
 cmd_install() {
     test -e bots || test/common/make-bots
 
     # We first read the result directly into the cache, then we unpack it.
-    tree="$(bots/npm download < package.json | tar_to_cache)"
+    tree="$(npm_download < package.json | tar_to_cache)"
     commit="$(sha256sum package.json | git_cache commit-tree "${tree}")"
     git_cache tag "sha-${commit}" "${commit}" "--no-sign"
     cmd_checkout "${commit}"
@@ -99,7 +113,7 @@ cmd_verify() {
     fetch_sha_to_cache "${commit}"
 
     committed_tree="$(git_cache rev-parse "${commit}^{tree}")"
-    expected_tree="$(git cat-file blob "$1:package.json" | bots/npm download | tar_to_cache)"
+    expected_tree="$(git cat-file blob "$1:package.json" | npm_download | tar_to_cache)"
 
     if [ "${committed_tree}" != "${expected_tree}" ]; then
         exec >&2

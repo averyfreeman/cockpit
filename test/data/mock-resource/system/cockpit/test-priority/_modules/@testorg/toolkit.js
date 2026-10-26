@@ -1,2 +1,1 @@
-/* global the */
 the.code();

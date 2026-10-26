@@ -1,4 +1,3 @@
-/* global ph_mouse ph_set_result ph_wait_not_visible ph_wait_present */
 
 async function test() {
     try {

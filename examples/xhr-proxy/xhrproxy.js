@@ -42,7 +42,6 @@ function setupCockpitXHR() {
 
 /* Send a 'init' message. After that we have the Cockpit transport token.
  * This also tells integration tests that we are ready to go. */
-/* global cockpit */
 cockpit.transport.wait(setupCockpitXHR);
 
 /* The following implements the example page, and represents an application that uses

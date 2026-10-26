@@ -1,4 +1,4 @@
-/* eslint no-unused-vars: 0 */
+/* oxlint-disable no-unused-vars */
 
 /*
  * These are routines used by our testing code.

@@ -22,6 +22,8 @@ const nodePaths = ['pkg/lib'];
 const pkgOptions = {
     ...!production ? { sourcemap: "linked" } : {},
     bundle: true,
+    jsx: 'automatic',
+    preserveSymlinks: false,
     external: ['*.woff', '*.woff2', '*.jpg', '*.svg', '../../assets*'], // Allow external font files which live in ../../static/fonts
     legalComments: 'external', // Move all legal comments to a .LEGAL.txt file
     loader: {
@@ -41,6 +43,7 @@ const pkgOptions = {
 const qunitOptions = {
     sourcemap: "linked",
     bundle: true,
+    jsx: 'automatic',
     minify: false,
     nodePaths,
     outbase: './pkg',
@@ -79,6 +82,71 @@ const cockpitJSResolvePlugin = {
 
         build.onLoad({ filter: /.*/, namespace: 'external-global' },
                      args => ({ contents: `module.exports = ${args.path}` }));
+    },
+};
+
+// Resolve React imports through their real paths. Debian's build unpacks the
+// vendored node_modules tree separately and links it into place, which can
+// otherwise make the same React package appear under multiple module IDs.
+const reactResolveMarker = '__cockpitReactCanonicalResolve';
+const reactCanonicalResolvePlugin = {
+    name: 'react-canonical-resolve',
+    setup(build) {
+        build.onResolve({ filter: /^react(?:-dom)?(?:\/.*)?$/ }, async args => {
+            if (args.pluginData?.[reactResolveMarker])
+                return null;
+
+            const resolved = await build.resolve(args.path, {
+                // Always resolve from the project root so imports from
+                // vendored packages cannot fall through to a parent checkout.
+                resolveDir: process.cwd(),
+                kind: args.kind,
+                pluginData: { [reactResolveMarker]: true },
+                with: args.with,
+            });
+
+            if (resolved.errors.length)
+                return { errors: resolved.errors, warnings: resolved.warnings };
+
+            const result = { ...resolved, pluginData: args.pluginData };
+            if (resolved.external || resolved.namespace !== 'file')
+                return result;
+
+            try {
+                result.path = fs.realpathSync(resolved.path);
+            } catch (error) {
+                return {
+                    errors: [{ text: `Could not canonicalize ${args.path}: ${error.message}` }],
+                    warnings: resolved.warnings,
+                };
+            }
+            return result;
+        });
+
+        build.onEnd(result => {
+            if (result.errors.length || !result.metafile)
+                return;
+
+            const shellOutput = Object.entries(result.metafile.outputs).find(([output, metadata]) => {
+                const normalizedOutput = output.replaceAll('\\', '/');
+                const normalizedEntry = metadata.entryPoint?.replaceAll('\\', '/');
+                return normalizedOutput.endsWith('/shell/shell.js') ||
+                    /(?:^|\/)pkg\/shell\/shell\.(?:js|jsx|ts|tsx)$/.test(normalizedEntry ?? '');
+            });
+            if (!shellOutput)
+                return;
+
+            const [output, metadata] = shellOutput;
+            const reactImplementations = Object.keys(metadata.inputs).filter(input =>
+                /(?:^|\/)react\/cjs\/react\.(?:development|production)\.js$/.test(input.replaceAll('\\', '/')));
+            if (reactImplementations.length !== 1) {
+                return {
+                    errors: [{
+                        text: `Expected exactly one React runtime in ${output}, found ${reactImplementations.length}: ${reactImplementations.join(', ') || 'none'}`
+                    }]
+                };
+            }
+        });
     },
 };
 
@@ -147,6 +215,18 @@ async function build() {
     const { entryPoints, assetFiles, redhat_fonts } = getFiles(args.onlydir);
     const tests = getTestFiles();
     const testEntryPoints = tests.map(test => "pkg/" + test);
+    const sassOptions = {
+        loadPaths: [...nodePaths, 'node_modules'],
+        filter: /\.scss/,
+        quietDeps: true,
+        silenceDeprecations: [
+            "if-function" // https://github.com/patternfly/patternfly/issues/8077
+        ]
+    };
+    const qunitPlugins = [
+        sassPlugin(sassOptions),
+        cockpitTestHtmlPlugin({ testFiles: tests }),
+    ];
 
     const pkgFirstPlugins = [
         cleanPlugin({ subdir: args.onlydir }),
@@ -154,14 +234,8 @@ async function build() {
 
     const pkgPlugins = [
         cockpitJSResolvePlugin,
-        sassPlugin({
-            loadPaths: [...nodePaths, 'node_modules'],
-            filter: /\.scss/,
-            quietDeps: true,
-            silenceDeprecations: [
-                "if-function" // https://github.com/patternfly/patternfly/issues/8077
-            ]
-        })
+        reactCanonicalResolvePlugin,
+        sassPlugin(sassOptions)
     ];
 
     const getTime = () => new Date().toTimeString().split(' ')[0];
@@ -232,9 +306,7 @@ async function build() {
             const context = await esbuild.context({
                 ...qunitOptions,
                 entryPoints: testEntryPoints,
-                plugins: [
-                    cockpitTestHtmlPlugin({ testFiles: tests }),
-                ],
+                plugins: qunitPlugins,
             });
 
             await context.rebuild();
@@ -252,9 +324,7 @@ async function build() {
             ? await esbuild.context({
                 ...qunitOptions,
                 entryPoints: testEntryPoints,
-                plugins: [
-                    cockpitTestHtmlPlugin({ testFiles: tests }),
-                ],
+                plugins: qunitPlugins,
             })
             : null;
 

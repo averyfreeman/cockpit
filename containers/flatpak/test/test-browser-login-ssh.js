@@ -1,4 +1,3 @@
-/* global ph_mouse ph_set_result ph_wait_present ph_wait_visible ph_wait_in_text ph_wait_not_visible */
 
 async function assert_conversation(match) {
     await ph_wait_present("#conversation-prompt");

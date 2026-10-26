@@ -15,7 +15,7 @@
         "exactOptionalPropertyTypes": true,
         "noUncheckedSideEffectImports": false,
         "incremental": true,
-        "jsx": "react",
+        "jsx": "react-jsx",
         "lib": [
             "dom",
             "es2021"

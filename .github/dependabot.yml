@@ -14,9 +14,9 @@ updates:
       - "node_modules"
       - "bot"
     groups:
-      eslint:
+      oxlint:
         patterns:
-          - "eslint*"
+          - "oxlint*"
       esbuild:
         patterns:
           - "esbuild*"
@@ -42,14 +42,8 @@ updates:
       - dependency-name: "@patternfly/*"
         update-types: ["version-update:semver-major"]
 
-      # PF6 doesn't support React 19 yet and often doesn't support new major versions
-      # right away in general.
-      # https://github.com/patternfly/pf-roadmap/issues/201
+      # Major React updates need a manual compatibility check.
       - dependency-name: "*react*"
-        update-types: ["version-update:semver-major"]
-
-      # The plugins we use didn't work with anything after 8 at some point
-      - dependency-name: "eslint"
         update-types: ["version-update:semver-major"]
 
       # The TypeScript toolchain takes a while to update to a major version

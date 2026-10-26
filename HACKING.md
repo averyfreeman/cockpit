@@ -283,27 +283,23 @@ source directory.
 
 The tests require at least `pytest` 7.0.0 or higher to run.
 
-## Running eslint
+## Running Oxlint
 
-Cockpit uses [ESLint](https://eslint.org/) to automatically check JavaScript
-code style in `.js` and `.jsx` files.
+Cockpit uses [Oxlint](https://oxc.rs/docs/guide/usage/linter/) to check
+JavaScript, JSX, TypeScript, and TSX code.
 
 The linter is executed as part of `test/common/static-code`.
 
-For developer convenience, the ESLint can be started explicitly by:
+For developer convenience, Oxlint can be started explicitly by:
 
-    npm run eslint
+    npm run lint
 
-Most rule violations can be automatically fixed by running:
+Auto-fixable rule violations can be fixed by running:
 
-    npm run eslint:fix
+    npm run lint:fix
 
-Rules configuration can be found in the `.eslintrc.json` file.
-
-During fast iterative development, you can also choose to not run eslint, by
-running `./build.js` with the `-e`/`--no-eslint` option. This
-speeds up the build and avoid build failures due to ill-formatted comments,
-unused identifiers, and other JavaScript-related issues.
+Rules configuration can be found in the `.oxlintrc.json` file. TypeScript type
+checking remains separate and is run by `test/common/typecheck`.
 
 ## Running stylelint
 
@@ -602,6 +598,51 @@ Cockpit log out, use something like:
 
     >> localStorage.debugging = "spawn"
 
+## React conventions and lifecycle checks
+
+The frontend uses React 19 and the automatic JSX transform in both esbuild and
+TypeScript. Import React values and types when they are used explicitly; JSX
+alone does not need a default React import. New function components accept `ref`
+as a prop. The select helpers retain `innerRef` for existing callers.
+
+Application entry points use `createRoot` from `react-root`. It preserves React's
+root interface and error reporting while displaying a reload action if rendering
+fails. Use `react-dom/client` directly in tests that exercise React itself.
+The build resolves React imports through the project root, and the shell bundle
+fails its build if it contains more than one React core runtime. Keep new aliases
+and bundled dependencies from bypassing that shared resolution.
+
+Keep rendering free of connection setup, subscriptions, commands, and DOM writes.
+Own those resources in effects and return cleanup functions. Guard asynchronous
+results against unmount and dependency changes. `useOn` uses React's external
+store subscription protocol for `EventEmitter`; `useEvent` subscribes to legacy
+Cockpit event sources after commit and keeps event callbacks current. Existing
+`useObject`/`useInit` callers have synchronous initialization semantics: migrate
+their side effects explicitly instead of changing that contract globally. A
+global StrictMode rollout requires auditing those remaining resource factories.
+
+The transport uses `pagehide` for document cleanup, with one listener per document
+even when the transport module is bundled more than once. A BFCache restore
+reloads the page to recreate closed channels and revalidate the session.
+`visibilitychange` alone is not a disconnect signal: switching tabs must keep
+administration sessions usable.
+
+After `./build.js`, the focused React and lifecycle browser regressions run with:
+
+```sh
+pytest -q test/pytest/test_browser.py -k 'test-react or test-events or test-lifecycle'
+```
+
+Run the project's TypeScript check with:
+
+```sh
+test/common/typecheck
+```
+
+This uses the repository's existing policy for gradual JavaScript typing and
+third-party declarations. Raw `tsc` also prints the legacy diagnostics that this
+policy intentionally filters.
+
 ## Using React Developer Tools
 
 Cockpit uses React for the JavaScript frontend, [React Developer
@@ -682,7 +723,7 @@ _If at all possible, use the cockpit/tasks container with toolbox/distrobox as
 documented above. Installing all necessary development packages manually on
 your machine is intrusive, error prone, difficult, and hard to debug._
 
-You will need at least node.js and NPM.
+You will need Node.js 24 or newer and npm.
 
 On Fedora or CentOS (>= 9):
 

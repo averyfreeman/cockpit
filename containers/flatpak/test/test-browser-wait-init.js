@@ -1,4 +1,3 @@
-/* global ph_set_result ph_wait_present */
 
 async function test() {
     try {

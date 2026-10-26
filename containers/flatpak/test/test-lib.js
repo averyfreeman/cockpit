@@ -1,4 +1,4 @@
-/* eslint no-unused-vars: ["error", { "varsIgnorePattern": "ph_.*" }] */
+
 /* simplified subset of test/common/test-functions.js; no sizzle */
 
 window.cur_doc = document;

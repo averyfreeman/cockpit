@@ -1,4 +1,3 @@
-/* global cockpit */
 
 import { LongRunningProcess, ProcessState } from './long-running-process.js';
 

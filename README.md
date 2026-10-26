@@ -20,18 +20,13 @@
 
 ## What is Cockpit?
 
-Cockpit is an interactive server admin interface. It is easy to use and very lightweight.
-Cockpit interacts directly with the operating system from a real Linux session in a browser.
+Cockpit is an interactive server admin interface. It is easy to use and very lightweight. Cockpit interacts directly with the operating system from a real Linux session in a browser.
 
-Cockpit makes Linux discoverable, allowing sysadmins to easily perform tasks such as starting
-containers, storage administration, network configuration, inspecting logs and so on.
+Cockpit makes Linux discoverable, allowing sysadmins to easily perform tasks such as starting containers, storage administration, network configuration, inspecting logs and so on.
 
-Jumping between the terminal and the web tool is no problem. A service started via Cockpit
-can be stopped via the terminal. Likewise, if an error occurs in the terminal, it can be seen
-in the Cockpit journal interface.
+Jumping between the terminal and the web tool is no problem. A service started via Cockpit can be stopped via the terminal. Likewise, if an error occurs in the terminal, it can be seen in the Cockpit journal interface.
 
-You can also easily add other machines that have Cockpit installed and are accessible via SSH and jump
-between these hosts.
+You can also easily add other machines that have Cockpit installed and are accessible via SSH and jump between these hosts.
 
 ## Installation
 
