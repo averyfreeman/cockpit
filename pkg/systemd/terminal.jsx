@@ -4,7 +4,7 @@ import 'cockpit-dark-theme'; // once per page
 import '../lib/patternfly/patternfly-6-cockpit.scss';
 
 import React from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot } from "react-root";
 import { FormSelect, FormSelectOption } from "@patternfly/react-core/dist/esm/components/FormSelect/index.js";
 import { NumberInput } from "@patternfly/react-core/dist/esm/components/NumberInput/index.js";
 import { Toolbar, ToolbarContent, ToolbarGroup, ToolbarItem } from "@patternfly/react-core/dist/esm/components/Toolbar/index.js";

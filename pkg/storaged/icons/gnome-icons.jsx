@@ -12,7 +12,6 @@
    Commons, 171 Second Street, Suite 300, San Francisco, California 94105, USA.
 */
 
-import React from "react";
 
 export const NetworkIcon = () => {
     // network-wired-symbolic.svg

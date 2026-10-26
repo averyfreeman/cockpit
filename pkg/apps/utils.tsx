@@ -107,7 +107,7 @@ export class ProgressReporter {
 }
 
 // ex is a PackageKit error; requires typing pkg/lib/packagekit.js first
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// oxlint-disable-next-line typescript/no-explicit-any
 export const show_error = (ex: any) => {
     if (ex.code === "cancelled")
         return;

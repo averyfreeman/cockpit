@@ -5,7 +5,7 @@
 
 import cockpit from 'cockpit';
 import { EventEmitter } from 'cockpit/event';
-import { useState, useEffect, useRef, useReducer } from 'react';
+import { useState, useEffect, useEffectEvent, useRef, useReducer, useCallback, useSyncExternalStore } from 'react';
 import { dequal } from 'dequal/lite';
 
 /* HOOKS
@@ -49,16 +49,13 @@ import { dequal } from 'dequal/lite';
  * See https://docs.cockpit-project.org/cockpit-guide/latest/guide/cockpit-location.html
  */
 
+function subscribeLocation(update: () => void) {
+    cockpit.addEventListener("locationchanged", update);
+    return () => cockpit.removeEventListener("locationchanged", update);
+}
+
 export function usePageLocation() {
-    const [location, setLocation] = useState(cockpit.location);
-
-    useEffect(() => {
-        function update() { setLocation(cockpit.location) }
-        cockpit.addEventListener("locationchanged", update);
-        return () => cockpit.removeEventListener("locationchanged", update);
-    }, []);
-
-    return location;
+    return useSyncExternalStore(subscribeLocation, () => cockpit.location);
 }
 
 /* - useLoggedInUser()
@@ -79,7 +76,14 @@ cockpit_user_promise.then(user => { cockpit_user = user }).catch(err => console.
 
 export function useLoggedInUser() {
     const [user, setUser] = useState<cockpit.UserInfo | null>(cockpit_user);
-    useEffect(() => { if (!cockpit_user) cockpit_user_promise.then(setUser); }, []);
+    useEffect(() => {
+        let active = true;
+        cockpit_user_promise.then(user => {
+            if (active)
+                setUser(user);
+        }).catch(err => console.error(err));
+        return () => { active = false };
+    }, []);
     return user;
 }
 
@@ -287,32 +291,27 @@ export function useEvent<EM extends cockpit.EventMap, E extends keyof EM>(obj: c
 
     const [, forceUpdate] = useReducer(x => x + 1, 0);
 
-    function addListener() {
-        function update(...args: Parameters<cockpit.EventListener<EM[E]>>) {
-            if (handler)
-                handler(...args);
-            forceUpdate();
-        }
+    const onEvent = useEffectEvent((...args: Parameters<cockpit.EventListener<EM[E]>>) => {
+        handler?.(...args);
+        forceUpdate();
+    });
 
+    useEffect(() => {
+        const update = (...args: Parameters<cockpit.EventListener<EM[E]>>) => onEvent(...args);
         obj?.addEventListener(event, update);
+        // Resynchronize changes made between rendering and committing the listener.
+        forceUpdate();
         return () => obj?.removeEventListener(event, update);
-    }
-
-    useObject(
-        addListener,
-        removeListener => removeListener(),
-        [obj, event, handler]);
+    }, [obj, event]);
 }
 
 /* Same as useEvent, but for our own EventEmitter.
  */
 export function useOn<EM extends { [E in keyof EM]: (...args: never[]) => void }, E extends keyof EM>(object: EventEmitter<EM> | null, event: E): void {
-    const [, forceUpdate] = useReducer(x => x + 1, 0);
-
-    useObject(
-        () => object?.on(event, forceUpdate as EM[E]),
-        off => off && off(),
-        [object, event]);
+    const subscribe = useCallback((notify: () => void) =>
+        object?.on(event, notify as EM[E]) ?? (() => {}), [object, event]);
+    const getSnapshot = useCallback(() => object?.getVersion(event) ?? 0, [object, event]);
+    useSyncExternalStore(subscribe, getSnapshot);
 }
 
 /* - useInit(func, deps, comps)

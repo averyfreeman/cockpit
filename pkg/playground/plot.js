@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 import './plot.css';
 
-import React from 'react';
-import { createRoot } from 'react-dom/client';
+import { createRoot } from 'react-root';
 
 import { PlotState } from "plot.js";
 import { SvgPlot, bytes_config } from "cockpit-components-plot.jsx";

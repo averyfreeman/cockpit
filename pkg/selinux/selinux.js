@@ -7,7 +7,7 @@ import cockpit from "cockpit";
 import 'cockpit-dark-theme'; // once per page
 
 import React from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot } from "react-root";
 
 import '../lib/patternfly/patternfly-6-cockpit.scss';
 

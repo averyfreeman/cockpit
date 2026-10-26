@@ -120,7 +120,7 @@
  *
  */
 
-import React, { useContext, useState, useRef } from "react";
+import React, { useContext, useState, useRef, useMemo } from "react";
 
 export interface DialogResult<T> {
     resolve(value: T): void;
@@ -147,30 +147,35 @@ export const WithDialogs = ({ children } : { children: React.ReactNode }) => {
     const [dialog, setDialog] = useState<React.ReactNode>(null);
     type State = "close" | "show" | "run";
     const shown = useRef<State>("close");
+    const currentDialog = useRef<React.ReactNode>(null);
 
-    function transition(expected: State, to: State, arg: React.ReactNode = null) {
-        if (shown.current !== expected)
-            throw new Error(`Dialogs.${to}(${JSON.stringify(arg)}) called, but that's only valid ` +
-                            `after .${expected}(), current dialog is ${JSON.stringify(dialog)}.`);
-        shown.current = to;
-        setDialog(arg);
-    }
+    // Async callbacks may retain this interface across any number of renders.
+    const Dialogs = useMemo<Dialogs>(() => {
+        function transition(expected: State, to: State, arg: React.ReactNode = null) {
+            if (shown.current !== expected)
+                throw new Error(`Dialogs.${to}(${JSON.stringify(arg)}) called, but that's only valid ` +
+                                `after .${expected}(), current dialog is ${JSON.stringify(currentDialog.current)}.`);
+            shown.current = to;
+            currentDialog.current = arg;
+            setDialog(arg);
+        }
 
-    const Dialogs: Dialogs = {
-        show: (component: React.ReactNode) => transition("close", "show", component),
-        close: () => transition("show", "close"),
-        run: async (component, props) => {
-            try {
-                return await new Promise((resolve, reject) => {
-                    transition("close", "run",
-                               React.createElement(component, { ...props, dialogResult: { resolve, reject } }));
-                });
-            } finally {
-                transition("run", "close");
-            }
-        },
-        isActive: () => dialog !== null
-    };
+        return {
+            show: component => transition("close", "show", component),
+            close: () => transition("show", "close"),
+            run: async (component, props) => {
+                try {
+                    return await new Promise((resolve, reject) => {
+                        transition("close", "run",
+                                   React.createElement(component, { ...props, dialogResult: { resolve, reject } }));
+                    });
+                } finally {
+                    transition("run", "close");
+                }
+            },
+            isActive: () => shown.current !== "close"
+        };
+    }, []);
 
     return (
         <DialogsContext.Provider value={Dialogs}>

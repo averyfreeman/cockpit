@@ -2,7 +2,7 @@
  * Copyright (C) 2022 Red Hat, Inc.
  * SPDX-License-Identifier: LGPL-2.1-or-later
  */
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
 import { Flex, FlexItem } from "@patternfly/react-core/dist/esm/layouts/Flex/index.js";
 import { PowerOffIcon, RedoIcon } from "@patternfly/react-icons";

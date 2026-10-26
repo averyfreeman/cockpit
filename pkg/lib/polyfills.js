@@ -8,4 +8,4 @@
  */
 
 // Don't complain about extending native data types -- that's what polyfills do
-/* eslint-disable no-extend-native */
+/* oxlint-disable no-extend-native */

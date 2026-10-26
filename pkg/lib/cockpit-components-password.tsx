@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 import cockpit from 'cockpit';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { debounce } from 'throttle-debounce';
 import { Button } from '@patternfly/react-core/dist/esm/components/Button/index.js';
 import { FormGroup, FormHelperText } from "@patternfly/react-core/dist/esm/components/Form/index.js";

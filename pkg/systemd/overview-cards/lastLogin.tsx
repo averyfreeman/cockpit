@@ -2,13 +2,12 @@
  * Copyright (C) 2021 Red Hat, Inc.
  * SPDX-License-Identifier: LGPL-2.1-or-later
  */
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
 import { Flex, FlexItem } from "@patternfly/react-core/dist/esm/layouts/Flex/index.js";
 import { ExclamationTriangleIcon, UserIcon } from "@patternfly/react-icons";
 
 import * as timeformat from "timeformat";
-import { useInit } from "hooks";
 import { LastlogEntry, getLastlog2 } from "logins";
 
 import cockpit from "cockpit";
@@ -51,31 +50,49 @@ const LastLogin = () => {
     const [lastlog, setLastlog] = useState<LastlogEntry | null>(null);
     const [name, setName] = useState<string | null>(null);
 
-    useInit(async () => {
-        const user = await cockpit.user();
-        setName(user.name);
-
-        const bridge = cockpit.dbus(null, { bus: "internal" });
-        try {
-            const [reply] = await bridge.call("/LoginMessages", "cockpit.LoginMessages", "Get", []);
-            const obj = JSON.parse(reply as string);
-            if (obj.version === 1) {
-                setLoginMessages(obj);
-            } else {
-                // empty reply is okay -- older bridges just don't send that information
-                if (obj.version !== undefined)
+    useEffect(() => {
+        let active = true;
+        let bridge: cockpit.DBusClient | null = null;
+        async function load() {
+            const user = await cockpit.user();
+            if (!active)
+                return;
+            setName(user.name);
+            bridge = cockpit.dbus(null, { bus: "internal" });
+            try {
+                const [reply] = await bridge.call("/LoginMessages", "cockpit.LoginMessages", "Get", []);
+                const obj = JSON.parse(reply as string);
+                if (active && obj.version === 1)
+                    setLoginMessages(obj);
+                else if (active && obj.version !== undefined)
                     console.error("unknown login-messages:", reply);
+            } catch (error) {
+                if (active)
+                    console.error("failed to fetch login messages:", error);
+            } finally {
+                bridge.close();
+                bridge = null;
             }
-        } catch (error) {
-            console.error("failed to fetch login messages:", error);
+            if (active) {
+                try {
+                    const lastlog = await getLastlog2(user.name);
+                    if (active)
+                        setLastlog(lastlog[user.name]);
+                } catch (error) {
+                    if (active)
+                        console.log("failed to fetch lastlog2:", error);
+                }
+            }
         }
-
-        try {
-            setLastlog((await getLastlog2(user.name))[user.name]);
-        } catch (error) {
-            console.log("failed to fetch lastlog2:", error);
-        }
-    });
+        load().catch(error => {
+            if (active)
+                console.warn("Could not read login history:", error);
+        });
+        return () => {
+            active = false;
+            bridge?.close();
+        };
+    }, []);
 
     const lastLoginTime: number | undefined = messages?.['last-login-time'] ?? lastlog?.time;
     if (!lastLoginTime)

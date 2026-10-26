@@ -4,7 +4,7 @@
  */
 
 import cockpit from "cockpit";
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
 import {

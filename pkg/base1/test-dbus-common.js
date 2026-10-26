@@ -18,7 +18,7 @@ function deep_update(target, data) {
     }
 }
 
-export function common_dbus_tests(channel_options, bus_name) { // eslint-disable-line no-unused-vars
+export function common_dbus_tests(channel_options, bus_name) { // oxlint-disable-line no-unused-vars
     QUnit.test("call method", async assert => {
         const dbus = cockpit.dbus(bus_name, channel_options);
         assert.equal(typeof dbus.call, "function", "is a function");

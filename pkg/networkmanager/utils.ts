@@ -298,9 +298,9 @@ export function list_interfaces() {
         client.call('/org/freedesktop/NetworkManager',
                     'org.freedesktop.NetworkManager',
                     'GetAllDevices', [])
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                // oxlint-disable-next-line typescript/no-explicit-any
                 .then((reply: any[]) => {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    // oxlint-disable-next-line typescript/no-explicit-any
                     Promise.all(reply[0].map((device: any) => {
                         return Promise.all([
                             client.call(device,
@@ -313,7 +313,7 @@ export function list_interfaces() {
                                     .then(reply => reply[0])
                         ]);
                     }))
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            // oxlint-disable-next-line typescript/no-explicit-any
                             .then((interfaces: any[]) => {
                                 client.close();
                                 resolve(interfaces.map(i => {

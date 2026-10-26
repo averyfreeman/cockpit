@@ -4,7 +4,6 @@
  */
 
 import cockpit from 'cockpit';
-import React from 'react';
 import { List, ListItem } from "@patternfly/react-core/dist/esm/components/List/index.js";
 import { Stack } from "@patternfly/react-core/dist/esm/layouts/Stack/index.js";
 import { Content, } from "@patternfly/react-core/dist/esm/components/Content/index.js";

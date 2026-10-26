@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Alert, AlertActionCloseButton } from "@patternfly/react-core/dist/esm/components/Alert/index.js";
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
@@ -16,7 +16,6 @@ import { EditIcon } from '@patternfly/react-icons';
 import { ModalError } from 'cockpit-components-inline-notification.jsx';
 import { superuser } from "superuser";
 import { useDialogs } from "dialogs.jsx";
-import { useInit } from "hooks";
 
 import cockpit from "cockpit";
 
@@ -72,8 +71,9 @@ export const MotdCard = () => {
     const [motdTag, setMotdTag] = useState(null);
     const [motdVisible, setMotdVisible] = useState(false);
 
-    useInit(() => {
-        cockpit.file("/etc/motd").watch((content, tag) => {
+    useEffect(() => {
+        const file = cockpit.file("/etc/motd");
+        file.watch((content, tag) => {
             /* trim initial empty lines and trailing space, but keep initial spaces to not break ASCII art */
             if (content)
                 content = content.trimEnd().replace(/^\s*\n/, '');
@@ -85,7 +85,8 @@ export const MotdCard = () => {
                 setMotdVisible(false);
             }
         });
-    });
+        return () => file.close();
+    }, []);
 
     function hideAlert() {
         setMotdVisible(false);

@@ -4,7 +4,6 @@
  */
 
 import cockpit from 'cockpit';
-import React from 'react';
 
 import { Form, FormGroup } from "@patternfly/react-core/dist/esm/components/Form/index.js";
 import { TextInput } from "@patternfly/react-core/dist/esm/components/TextInput/index.js";

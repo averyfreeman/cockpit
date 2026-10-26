@@ -198,7 +198,7 @@ interface TerminalComponentState {
 
 export class Terminal extends React.Component<TerminalComponentProps, TerminalComponentState> {
     terminal_state: TerminalState;
-    terminalRef: React.RefObject<HTMLDivElement>;
+    terminalRef: React.RefObject<HTMLDivElement | null>;
     terminal: Term;
 
     constructor(props: TerminalComponentProps) {

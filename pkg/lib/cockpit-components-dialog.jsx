@@ -5,7 +5,7 @@
 
 import cockpit from "cockpit";
 import React from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot } from "react-root";
 import PropTypes from "prop-types";
 import { Alert } from "@patternfly/react-core/dist/esm/components/Alert/index.js";
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
@@ -19,6 +19,9 @@ import { HelpIcon, ExternalLinkAltIcon } from '@patternfly/react-icons';
 import "cockpit-components-dialog.scss";
 
 const _ = cockpit.gettext;
+
+/** @type {import('react-dom/client').Root | null} */
+let activeDialogRoot = null;
 
 /*
  * React template for a Cockpit dialog footer
@@ -269,26 +272,31 @@ Dialog.propTypes = {
 export function show_modal_dialog(props, footerProps) {
     const dialogName = 'cockpit_modal_dialog';
     // don't allow nested dialogs, just close whatever is open
-    const curElement = document.getElementById(dialogName);
-    let root;
-    if (curElement) {
-        root = createRoot(curElement);
-        root.unmount();
-        curElement.remove();
-    }
+    activeDialogRoot?.unmount();
+    document.getElementById(dialogName)?.remove();
     // create an element to render into
     const rootElement = document.createElement("div");
-    root = createRoot(rootElement);
+    const root = createRoot(rootElement);
+    activeDialogRoot = root;
     rootElement.id = dialogName;
     document.body.appendChild(rootElement);
 
     // register our own on-close callback
     let origCallback;
+    let closed = false;
     const closeCallback = function() {
-        if (origCallback)
-            origCallback.apply(this, arguments);
-        root.unmount();
-        rootElement.remove();
+        if (closed)
+            return;
+        closed = true;
+        try {
+            if (origCallback)
+                origCallback.apply(this, arguments);
+        } finally {
+            root.unmount();
+            rootElement.remove();
+            if (activeDialogRoot === root)
+                activeDialogRoot = null;
+        }
     };
 
     const dialogObj = { };

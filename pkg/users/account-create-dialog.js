@@ -4,7 +4,6 @@
  */
 
 import cockpit from 'cockpit';
-import React from 'react';
 
 import { Bullseye } from "@patternfly/react-core/dist/esm/layouts/Bullseye/index.js";
 import { Checkbox } from "@patternfly/react-core/dist/esm/components/Checkbox/index.js";

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
-import React, { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useEffectEvent, useState } from 'react';
 import cockpit from 'cockpit';
 import { Button } from '@patternfly/react-core/dist/esm/components/Button/index.js';
 import { ClipboardCopy } from '@patternfly/react-core/dist/esm/components/ClipboardCopy/index.js';
@@ -25,7 +25,6 @@ import { useDialogs } from 'dialogs.jsx';
 import { validate_ip, validate_ipv4, validate_ipv6 } from './utils';
 
 import './wireguard.scss';
-import { useInit } from 'hooks';
 
 const _ = cockpit.gettext;
 
@@ -76,22 +75,36 @@ export function WireGuardDialog({ settings, connection, dev }) {
     const [peers, setPeers] = useState(settings.wireguard.peers.map(peer => ({ ...peer, allowedIps: peer.allowedIps?.join(",") ?? '' })));
 
     // Additional check for `wg` after install_dialog for non-packagekit and el8 environments
-    useInit(async () => {
+    const initialize = useEffectEvent(async isActive => {
         try {
             await cockpit.script("command -v wg");
-        } catch (e) {
-            setDialogError(_("wireguard-tools package is not installed"));
+        } catch (error) {
+            if (isActive())
+                setDialogError(_("wireguard-tools package is not installed"));
             return;
         }
-
+        if (!isActive())
+            return;
         if (connection?.[" priv"].path) {
-            const objpath = connection[" priv"].path;
-            const [result] = await model.client.call(objpath, "org.freedesktop.NetworkManager.Settings.Connection", "GetSecrets", ["wireguard"]);
-            setGeneratedPrivateKey(result.wireguard["private-key"].v);
+            const [result] = await model.client.call(connection[" priv"].path,
+                                                    "org.freedesktop.NetworkManager.Settings.Connection", "GetSecrets", ["wireguard"]);
+            if (isActive())
+                setGeneratedPrivateKey(result.wireguard["private-key"].v);
         } else {
-            generatePrivateKey();
+            const key = await cockpit.spawn(["wg", "genkey"]);
+            if (isActive())
+                setGeneratedPrivateKey(key.trim());
         }
     });
+    const connectionPath = connection?.[" priv"].path;
+    useEffect(() => {
+        let active = true;
+        initialize(() => active).catch(error => {
+            if (active)
+                setDialogError(error.message);
+        });
+        return () => { active = false };
+    }, [connectionPath, model]);
 
     useEffect(() => {
         const privateKey = isPrivKeyGenerated ? generatedPrivateKey : pastedPrivateKey;

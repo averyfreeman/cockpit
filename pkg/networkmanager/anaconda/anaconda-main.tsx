@@ -24,7 +24,7 @@ import { EmptyStatePanel } from "cockpit-components-empty-state.jsx";
 const _ = cockpit.gettext;
 
 interface AnacondaInterfaceRowProps {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line typescript/no-explicit-any
     iface: any;
     setSelectedIfaceName: React.Dispatch<React.SetStateAction<string | null>>;
 }
@@ -57,7 +57,7 @@ const AnacondaInterfaceRow = ({ iface, setSelectedIfaceName }: AnacondaInterface
 interface AnacondaNetworkPageProps {
     privileged: boolean;
     operationInProgress: boolean;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line typescript/no-explicit-any
     interfaces: any[];
 }
 

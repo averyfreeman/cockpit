@@ -6,8 +6,8 @@ import '../lib/patternfly/patternfly-6-cockpit.scss';
 import 'polyfills'; // once per application
 import 'cockpit-dark-theme'; // once per page
 
-import React, { useMemo, useState } from 'react';
-import { createRoot } from 'react-dom/client';
+import { useMemo, useState } from 'react';
+import { createRoot } from 'react-root';
 
 import { debounce } from 'throttle-debounce';
 

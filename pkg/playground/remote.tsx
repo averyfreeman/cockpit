@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
-import React, { useState } from "react";
-import { createRoot } from 'react-dom/client';
+import { useState } from "react";
+import { createRoot } from 'react-root';
 
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
 import { Form, FormGroup } from "@patternfly/react-core/dist/esm/components/Form/index.js";

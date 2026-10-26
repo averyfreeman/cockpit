@@ -4,7 +4,7 @@
  */
 
 import cockpit from "cockpit";
-import React, { useState } from "react";
+import { useState } from "react";
 import { Alert } from "@patternfly/react-core/dist/esm/components/Alert/index.js";
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
 import { Flex, FlexItem } from "@patternfly/react-core/dist/esm/layouts/Flex/index.js";

@@ -38,7 +38,7 @@ QUnit.test("fsinfo errors", async assert => {
     try {
         await fsinfo("rel", []);
         assert.ok(false, "fsinfo() error checking");
-    } catch (exc: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+    } catch (exc: any) { // oxlint-disable-line typescript/no-explicit-any
         thrown = exc.problem;
     }
     assert.equal(thrown, 'protocol-error', "fsinfo() error checking");

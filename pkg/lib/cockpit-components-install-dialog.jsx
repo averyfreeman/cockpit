@@ -4,7 +4,6 @@
  */
 
 import cockpit from "cockpit";
-import React from "react";
 
 import { Flex } from "@patternfly/react-core/dist/esm/layouts/Flex/index.js";
 import { Spinner } from "@patternfly/react-core/dist/esm/components/Spinner/index.js";

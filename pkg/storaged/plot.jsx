@@ -5,7 +5,6 @@
 
 import cockpit from "cockpit";
 
-import React from "react";
 
 import { Split, SplitItem } from "@patternfly/react-core/dist/esm/layouts/Split/index.js";
 import { Grid, GridItem } from "@patternfly/react-core/dist/esm/layouts/Grid/index.js";

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
 import { ExclamationCircleIcon } from "@patternfly/react-icons";
@@ -11,7 +11,7 @@ import { Flex } from "@patternfly/react-core/dist/esm/layouts/Flex/index.js";
 import { Icon } from '@patternfly/react-core/dist/esm/components/Icon/index.js';
 
 import cockpit from "cockpit";
-import { useEvent, useInit } from 'hooks';
+import { useEvent } from 'hooks';
 
 function countFailingDisks(proxies) {
     const sataFail = Object.keys(proxies.drives_ata).reduce((acc, drive) => {
@@ -35,31 +35,30 @@ function countFailingDisks(proxies) {
     return sataFail + nvmeFail;
 }
 
-const proxies = {
-    drives_ata: null,
-    nvme_controller: null,
-};
-
 export const SmartOverviewStatus = () => {
+    const [proxies, setProxies] = useState({ drives_ata: null, nvme_controller: null });
     useEvent(proxies.drives_ata, "changed");
     useEvent(proxies.nvme_controller, "changed");
-    const [initDone, setInitDone] = useState(false);
 
-    useInit(async () => {
-        const udisksdbus = cockpit.dbus("org.freedesktop.UDisks2");
-
-        const addProxy = (iface) => {
-            return udisksdbus.proxies("org.freedesktop.UDisks2." + iface, "/org/freedesktop/UDisks2");
+    useEffect(() => {
+        let active = true;
+        const bus = cockpit.dbus("org.freedesktop.UDisks2");
+        const drives_ata = bus.proxies("org.freedesktop.UDisks2.Drive.Ata", "/org/freedesktop/UDisks2");
+        const nvme_controller = bus.proxies("org.freedesktop.UDisks2.NVMe.Controller", "/org/freedesktop/UDisks2");
+        Promise.all([drives_ata.wait(), nvme_controller.wait()]).then(() => {
+            if (active)
+                setProxies({ drives_ata, nvme_controller });
+        }).catch(error => {
+            if (active)
+                console.warn("Could not read disk health:", error);
+        });
+        return () => {
+            active = false;
+            bus.close();
         };
+    }, []);
 
-        proxies.drives_ata = addProxy("Drive.Ata");
-        proxies.nvme_controller = addProxy("NVMe.Controller");
-        await Promise.all(Object.keys(proxies).map(proxy => proxies[proxy].wait()));
-
-        setInitDone(true);
-    });
-
-    if (initDone === false || proxies.drives_ata === null || proxies.nvme_controller === null) {
+    if (proxies.drives_ata === null || proxies.nvme_controller === null) {
         return null;
     }
 

@@ -26,7 +26,7 @@ Copyright (c) 2019 Red Hat, Inc.
 
 */
 
-/* eslint-disable */
+/* oxlint-disable */
 
 import cockpit from "cockpit";
 import React from 'react';
@@ -49,9 +49,11 @@ export interface MultiTypeaheadSelectOption extends Omit<SelectOptionProps, 'con
   color?: LabelProps["color"];
 }
 
-export interface MultiTypeaheadSelectProps extends Omit<SelectProps, 'toggle' | 'onSelect'> {
-  /** @hide Forwarded ref */
-  innerRef?: React.Ref<any>;
+export interface MultiTypeaheadSelectProps extends Omit<SelectProps, 'toggle' | 'onSelect' | 'onToggle'> {
+  /** Ref to the select menu. */
+  ref?: React.Ref<HTMLDivElement>;
+  /** @deprecated Use ref instead. */
+  innerRef?: React.Ref<HTMLDivElement>;
   /** Options of the select. */
   options: MultiTypeaheadSelectOption[];
   /** Selected values */
@@ -77,6 +79,7 @@ export interface MultiTypeaheadSelectProps extends Omit<SelectProps, 'toggle' | 
 }
 
 export const MultiTypeaheadSelectBase: React.FunctionComponent<MultiTypeaheadSelectProps> = ({
+  ref,
   innerRef,
   options,
   selected,
@@ -91,12 +94,13 @@ export const MultiTypeaheadSelectBase: React.FunctionComponent<MultiTypeaheadSel
   toggleProps,
   ...props
 }: MultiTypeaheadSelectProps) => {
+  const listboxId = React.useId();
   const [isOpen, setIsOpen] = React.useState(false);
   const [inputValue, setInputValue] = React.useState<string>("");
   const [selectOptions, setSelectOptions] = React.useState<MultiTypeaheadSelectOption[]>(options);
   const [focusedItemIndex, setFocusedItemIndex] = React.useState<number | null>(null);
   const [activeItemId, setActiveItemId] = React.useState<string | null>(null);
-  const textInputRef = React.useRef<HTMLInputElement>();
+  const textInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const NO_RESULTS = 'no results';
 
@@ -134,13 +138,12 @@ export const MultiTypeaheadSelectBase: React.FunctionComponent<MultiTypeaheadSel
     }
 
     setSelectOptions(newSelectOptions);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [inputValue, options]);
 
   const setActiveAndFocusedItem = (itemIndex: number) => {
     setFocusedItemIndex(itemIndex);
-    const focusedItem = selectOptions[itemIndex];
-    setActiveItemId(focusedItem.value as string);
+    setActiveItemId(`${listboxId}-option-${itemIndex}`);
   };
 
   const resetActiveAndFocusedItem = () => {
@@ -295,7 +298,7 @@ export const MultiTypeaheadSelectBase: React.FunctionComponent<MultiTypeaheadSel
           {...(activeItemId && { 'aria-activedescendant': activeItemId })}
           role="combobox"
           isExpanded={isOpen}
-          aria-controls="select-typeahead-listbox"
+          aria-controls={listboxId}
         >
             <LabelGroup numLabels={10}>
                 {selected.map((selection) => {
@@ -334,15 +337,15 @@ export const MultiTypeaheadSelectBase: React.FunctionComponent<MultiTypeaheadSel
       }}
       toggle={toggle}
       variant="typeahead"
-      ref={innerRef}
+      ref={ref ?? innerRef}
       {...props}
     >
-      <SelectList>
+      <SelectList id={listboxId}>
         {selectOptions.map((option, index) => {
           const { content, value, ...props } = option;
 
           return (
-            <SelectOption key={value} value={value} isFocused={focusedItemIndex === index} {...props}>
+            <SelectOption key={value} value={value} isFocused={focusedItemIndex === index} {...props} id={`${listboxId}-option-${index}`}>
               {content}
             </SelectOption>
           );
@@ -354,8 +357,6 @@ export const MultiTypeaheadSelectBase: React.FunctionComponent<MultiTypeaheadSel
 
 MultiTypeaheadSelectBase.displayName = 'MultiTypeaheadSelectBase';
 
-export const MultiTypeaheadSelect = React.forwardRef((props: MultiTypeaheadSelectProps, ref: React.Ref<any>) => (
-  <MultiTypeaheadSelectBase {...props} innerRef={ref} />
-));
+export const MultiTypeaheadSelect = MultiTypeaheadSelectBase;
 
 MultiTypeaheadSelect.displayName = 'MultiTypeaheadSelect';

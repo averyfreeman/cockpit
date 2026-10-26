@@ -8,7 +8,7 @@ import 'cockpit-dark-theme'; // once per page
 
 import cockpit from "cockpit";
 import React from "react";
-import { createRoot } from 'react-dom/client';
+import { createRoot } from 'react-root';
 
 import { Badge } from "@patternfly/react-core/dist/esm/components/Badge/index.js";
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";

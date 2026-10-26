@@ -5,7 +5,7 @@
 
 import cockpit from "cockpit";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { ListingTable } from "cockpit-components-table.jsx";
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
 import { Label } from "@patternfly/react-core/dist/esm/components/Label/index.js";
@@ -16,7 +16,6 @@ import {
     ModalFooter,
     ModalHeader
 } from '@patternfly/react-core/dist/esm/components/Modal/index.js';
-import { useInit } from "hooks";
 import { DialogResult } from "dialogs";
 
 import { ShellState } from "./state";
@@ -56,8 +55,7 @@ export const ActivePagesDialog = ({
         return result;
     }
 
-    const init_pages = useInit(get_pages, [frames]);
-    const [pages, setPages] = useState(init_pages);
+    const [pages, setPages] = useState(get_pages);
 
     function onRemove() {
         pages.forEach(element => {
@@ -101,9 +99,8 @@ export const ActivePagesDialog = ({
                               aria-label={_("Active pages")}
                               emptyCaption={ _("There are currently no active pages") }
                                   onSelect={(_event, isSelected, rowIndex) => {
-                                      const new_pages = [...pages];
-                                      new_pages[rowIndex].selected = isSelected;
-                                      setPages(new_pages);
+                                      setPages(pages => pages.map((page, index) =>
+                                          index === rowIndex ? { ...page, selected: isSelected } : page));
                                   }}
                               rows={rows} />
             </ModalBody>

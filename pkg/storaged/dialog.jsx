@@ -987,7 +987,7 @@ export const CheckBoxes = (tag, title, options) => {
             if (options.fields.length == 1)
                 return fieldset;
 
-            // eslint-disable-next-line react/jsx-no-useless-fragment
+            // oxlint-disable-next-line react/jsx-no-useless-fragment
             return <>{ fieldset }</>;
         }
     };

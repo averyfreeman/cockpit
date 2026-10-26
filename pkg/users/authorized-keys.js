@@ -107,7 +107,7 @@ function AuthorizedKeys (user_name, home_dir) {
                         return cockpit
                                 .script(adder, [user_name, home_dir], { superuser: "try", err: "message" })
                                 .input(obj.raw + "\n")
-                                // eslint-disable-next-line prefer-promise-reject-errors
+                                // oxlint-disable-next-line prefer-promise-reject-errors
                                 .catch(ex => Promise.reject(_("Error saving authorized keys: ") + ex)); // not-covered: OS error
                     } else {
                         return Promise.reject(_("The key you provided was not valid."));

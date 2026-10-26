@@ -123,7 +123,7 @@ export async function upload(
 
         let eof = false;
 
-        // eslint-disable-next-line no-unmodified-loop-condition
+        // oxlint-disable-next-line no-unmodified-loop-condition
         while (!close_message) {
             /* We do the following steps for as long as the channel is open:
              *  - if there is room to write more data, do that

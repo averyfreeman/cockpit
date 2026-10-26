@@ -4,8 +4,8 @@
  */
 
 import cockpit from "cockpit";
-import React, { useState } from "react";
-import { useObject, useInit, useEvent } from "hooks";
+import React, { useEffect, useEffectEvent, useState } from "react";
+import { useObject, useEvent } from "hooks";
 import { useDialogs } from "dialogs.jsx";
 import { Alert } from "@patternfly/react-core/dist/esm/components/Alert/index.js";
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
@@ -76,7 +76,6 @@ const UnlockDialog = ({
     host: string | undefined
 }) => {
     const D = useDialogs();
-    useInit(init, [proxy, host]);
 
     const [methods, setMethods] = useState<string[] | null>(null);
     const [method, setMethod] = useState<string | false>(false);
@@ -144,8 +143,10 @@ const UnlockDialog = ({
                 });
     }
 
-    function init() {
+    const initialize = useEffectEvent((isActive: () => boolean) => {
         return proxy.Stop().finally(() => {
+            if (!isActive())
+                return;
             if (proxy.Bridges.length === 0) {
                 setError(_("No methods to gain administrative access are available (sudo -A, pkexec)."));
             } else if (proxy.Methods) {
@@ -161,7 +162,16 @@ const UnlockDialog = ({
             } else
                 start(proxy.Bridges[0]);
         });
-    }
+    });
+
+    useEffect(() => {
+        let active = true;
+        initialize(() => active).catch(error => {
+            if (active)
+                setError(String(error));
+        });
+        return () => { active = false };
+    }, [proxy, host]);
 
     const validated = errorVariant == "danger" ? "error" : errorVariant;
 
@@ -171,10 +181,9 @@ const UnlockDialog = ({
     let footer = null;
 
     if (prompt) {
-        if (!prompt.message && !prompt.prompt) {
-            prompt.message = _("Please authenticate to gain administrative access");
-            prompt.prompt = _("Password");
-        }
+        const emptyPrompt = !prompt.message && !prompt.prompt;
+        const promptMessage = emptyPrompt ? _("Please authenticate to gain administrative access") : prompt.message;
+        const promptLabel = emptyPrompt ? _("Password") : prompt.prompt;
 
         const apply = () => {
             proxy.Answer(value);
@@ -186,13 +195,13 @@ const UnlockDialog = ({
         body = (
             <Form isHorizontal onSubmit={event => { apply(); event.preventDefault(); return false }}>
                 { error && <Alert variant={errorVariant || 'danger'} isInline title={error} /> }
-                { prompt.message && <span>{prompt.message}</span> }
+                { promptMessage && <span>{promptMessage}</span> }
                 <FormGroup
                     fieldId="switch-to-admin-access-password"
-                    label={prompt.prompt}
+                    label={promptLabel}
                 >
                     <TextInput
-                        autoFocus // eslint-disable-line jsx-a11y/no-autofocus
+                        autoFocus // oxlint-disable-line jsx-a11y/no-autofocus
                         id="switch-to-admin-access-password"
                         isDisabled={busy}
                         onChange={(_event, value) => setValue(value)}

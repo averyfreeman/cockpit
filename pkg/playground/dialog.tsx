@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useReducer, useId } from "react";
-import { createRoot } from 'react-dom/client';
+import { createRoot } from 'react-root';
 import cockpit from 'cockpit';
 
 import '../lib/patternfly/patternfly-6-cockpit.scss';
@@ -301,12 +301,12 @@ const ExampleDialog = ({
             const err = [1, 2, 3, 4];
             throw DialogError.fromError("Too random", err);
         } else if (values.error === "message") {
-            // eslint-disable-next-line no-throw-literal
+            // oxlint-disable-next-line no-throw-literal
             throw { message: "segmentation fault" };
         } else if (values.error === "spawn") {
             await cockpit.spawn(["ls", "--no-such-option"], { err: "message" });
         } else if (values.error === "random") {
-            // eslint-disable-next-line no-throw-literal
+            // oxlint-disable-next-line no-throw-literal
             throw [1, 2, 3, 4];
         }
     }
@@ -647,7 +647,7 @@ const AsyncExampleDialog = ({
         if (throwError === 1)
             throw new Error("can't get the thing");
         else if (throwError === 2)
-            throw new DialogError("Getting the thing failed", <i>can't get it</i>);
+            throw new DialogError("Getting the thing failed", <i>can&apos;t get it</i>);
 
         await async_sleep(500);
         return {
@@ -774,7 +774,7 @@ const FileChooserButton = () => {
             onClick={
                 () => Dialogs.show(
                     <FileChooser
-                        title={"Select a file that starts with \"foo\""}
+                        title='Select a file that starts with "foo"'
                         actionLabel="Load"
                         action={loadFile}
                         filters={

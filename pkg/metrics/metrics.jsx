@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
-import React, { useState, createRef } from 'react';
+import React, { useEffect, useState, createRef } from 'react';
 
 import { Alert } from "@patternfly/react-core/dist/esm/components/Alert/index.js";
 import { Breadcrumb, BreadcrumbItem } from "@patternfly/react-core/dist/esm/components/Breadcrumb/index.js";
@@ -38,7 +38,7 @@ import { superuser } from "superuser";
 import { journal } from "journal";
 import { read_os_release } from "os-release";
 import { get_manifest_config_matchlist } from "utils";
-import { useObject, useEvent, useInit } from "hooks.js";
+import { useObject, useEvent } from "hooks.js";
 import { WithDialogs, useDialogs } from "dialogs.jsx";
 
 import { SimpleSelect } from "cockpit-components-simple-select.jsx";
@@ -1341,7 +1341,17 @@ const PCPConfigDialog = ({
     const [pending, setPending] = useState(false);
     const [packageManager, setPackageManager] = useState(null);
 
-    useInit(() => getPackageManager().then(setPackageManager));
+    useEffect(() => {
+        let active = true;
+        getPackageManager().then(manager => {
+            if (active)
+                setPackageManager(manager);
+        }).catch(error => {
+            if (active)
+                console.warn("Could not read package manager:", error);
+        });
+        return () => { active = false };
+    }, []);
 
     const handleInstall = async () => {
     // when enabling services, install missing packages on demand

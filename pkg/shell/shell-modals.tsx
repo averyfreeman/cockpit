@@ -4,7 +4,7 @@
  */
 
 import cockpit from "cockpit";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { AboutModal } from "@patternfly/react-core/dist/esm/components/AboutModal/index.js";
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
 import { Divider } from "@patternfly/react-core/dist/esm/components/Divider/index.js";
@@ -17,7 +17,6 @@ import { TextInput } from "@patternfly/react-core/dist/esm/components/TextInput/
 import { Content, ContentVariants } from "@patternfly/react-core/dist/esm/components/Content/index.js";
 import { SearchIcon } from '@patternfly/react-icons';
 
-import { useInit } from "hooks";
 import { DialogResult } from "dialogs";
 
 import { ShellState } from "./state";
@@ -36,12 +35,14 @@ export const AboutCockpitModal = ({
 } : {
     dialogResult: DialogResult<void>
 }) => {
-    const [packages, setPackages] = useState<Package[]>([]);
+    const [packages, setPackages] = useState<Package[] | null>(null);
 
-    useInit(() => {
+    useEffect(() => {
+        let active = true;
         const packages: Package[] = [];
         const cmd = "(set +e; rpm -qa --qf '%{NAME} %{VERSION}\\n'; dpkg-query -f '${Package} ${Version}\n' --show; pacman -Q) 2> /dev/null | grep cockpit | sort";
-        cockpit.spawn(["bash", "-c", cmd], { err: "message" })
+        const process = cockpit.spawn(["bash", "-c", cmd], { err: "message" });
+        process
                 .then(pkgs =>
                     pkgs.trim().split("\n")
                             .forEach(p => {
@@ -49,9 +50,19 @@ export const AboutCockpitModal = ({
                                 packages.push({ name: parts[0], version: parts[1] });
                             })
                 )
-                .catch(error => console.error("Could not read packages versions:", error))
-                .finally(() => setPackages(packages));
-    });
+                .catch(error => {
+                    if (active)
+                        console.error("Could not read packages versions:", error);
+                })
+                .finally(() => {
+                    if (active)
+                        setPackages(packages);
+                });
+        return () => {
+            active = false;
+            process.close();
+        };
+    }, []);
 
     return (
         <AboutModal

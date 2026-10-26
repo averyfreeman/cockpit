@@ -34,7 +34,7 @@ Copyright (c) 2019 Red Hat, Inc.
 
 */
 
-/* eslint-disable */
+/* oxlint-disable */
 
 import React from 'react';
 import {
@@ -75,7 +75,7 @@ export type SimpleSelectOption<T> = SimpleSelectMenuOption<T> |
                                     SimpleSelectDividerOption |
                                     SimpleSelectHeaderOption;
 
-export interface SimpleSelectProps<T> extends Omit<SelectProps, 'toggle' | 'onSelect'> {
+export interface SimpleSelectProps<T> extends Omit<SelectProps, 'toggle' | 'onSelect' | 'onToggle'> {
   /** Initial options of the select. */
   options: SimpleSelectOption<T>[];
   /** Selected option */

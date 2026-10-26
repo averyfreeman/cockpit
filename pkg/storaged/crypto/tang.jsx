@@ -9,7 +9,6 @@ import React from "react";
 import { ClipboardCopy } from "@patternfly/react-core/dist/esm/components/ClipboardCopy/index.js";
 import { Content, ContentVariants } from "@patternfly/react-core/dist/esm/components/Content/index.js";
 
-import { useInit } from "hooks";
 
 import stable_stringify from "json-stable-stringify-without-jsonify";
 
@@ -114,10 +113,17 @@ export const TangKeyVerification = ({ url, adv }) => {
     const cmd = cockpit.format("ssh $0 tang-show-keys $1", parsed.hostname, parsed.port);
     const [sigkey_thps, setSigKey] = React.useState(null);
 
-    useInit(async () => {
-        const sigkey = await Promise.all(compute_sigkey_thps(tang_adv_payload(adv)));
-        setSigKey(sigkey);
-    });
+    React.useEffect(() => {
+        let active = true;
+        Promise.all(compute_sigkey_thps(tang_adv_payload(adv))).then(sigkey => {
+            if (active)
+                setSigKey(sigkey);
+        }).catch(error => {
+            if (active)
+                console.warn("Could not compute Tang key fingerprints:", error);
+        });
+        return () => { active = false };
+    }, [adv]);
 
     if (sigkey_thps === null)
         return null;

@@ -9,8 +9,8 @@ import 'cockpit-dark-theme'; // once per page
 
 import cockpit from "cockpit";
 
-import React, { useState } from "react";
-import { createRoot } from 'react-dom/client';
+import { useState } from "react";
+import { createRoot } from 'react-root';
 
 import { EmptyStatePanel } from "cockpit-components-empty-state.jsx";
 import { usePageLocation, useObject, useEvent } from "hooks";

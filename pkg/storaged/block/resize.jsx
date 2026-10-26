@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
-import React from "react";
 import cockpit from "cockpit";
 import client from "../client.js";
 

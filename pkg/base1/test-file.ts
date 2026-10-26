@@ -81,7 +81,7 @@ QUnit.test("stringify replace", async assert => {
 });
 
 QUnit.test("stringify replace error", async assert => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line typescript/no-explicit-any
     const cycle: any = { };
     cycle.me = cycle;
     try {

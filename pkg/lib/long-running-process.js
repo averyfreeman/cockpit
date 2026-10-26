@@ -13,7 +13,6 @@
  * is not a common use case for Cockpit.
  */
 
-/* global cockpit */
 
 // systemd D-Bus API names
 const O_SD_OBJ = "/org/freedesktop/systemd1";

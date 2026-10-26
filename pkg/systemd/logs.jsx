@@ -7,8 +7,8 @@ import '../lib/patternfly/patternfly-6-cockpit.scss';
 import 'cockpit-dark-theme'; // once per page
 
 import cockpit from "cockpit";
-import React, { useState, useEffect } from 'react';
-import { createRoot } from 'react-dom/client';
+import { useState, useEffect } from 'react';
+import { createRoot } from 'react-root';
 
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
 import { ClipboardCopy } from "@patternfly/react-core/dist/esm/components/ClipboardCopy/index.js";

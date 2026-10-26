@@ -2,7 +2,7 @@
  * Copyright (C) 2016 Red Hat, Inc.
  * SPDX-License-Identifier: LGPL-2.1-or-later
  */
-import React, { useState } from 'react';
+import { useState } from 'react';
 import cockpit from 'cockpit';
 
 import { Alert, AlertActionCloseButton, AlertProps } from "@patternfly/react-core/dist/esm/components/Alert/index.js";

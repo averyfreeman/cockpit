@@ -4,4 +4,4 @@
  */
 
 // this registers itself as global on window.cockpit
-import cockpit from "cockpit"; // eslint-disable-line no-unused-vars
+import cockpit from "cockpit"; // oxlint-disable-line no-unused-vars

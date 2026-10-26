@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
 import { Nav, NavItem, NavList } from "@patternfly/react-core/dist/esm/components/Nav/index.js";
 import { Icon } from "@patternfly/react-core/dist/esm/components/Icon/index.js";

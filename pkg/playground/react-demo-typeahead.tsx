@@ -5,7 +5,7 @@
 
 import cockpit from "cockpit";
 
-import React, { useState } from "react";
+import { useState } from "react";
 
 import { Checkbox } from "@patternfly/react-core/dist/esm/components/Checkbox/index.js";
 import { TypeaheadSelect, TypeaheadSelectOption } from "cockpit-components-typeahead-select";

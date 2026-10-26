@@ -4,7 +4,6 @@
  */
 
 import cockpit from "cockpit";
-import React from "react";
 import client from "../client";
 
 import { install_dialog } from "cockpit-components-install-dialog.jsx";

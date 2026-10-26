@@ -4,7 +4,6 @@
  */
 
 import cockpit from "cockpit";
-import React from "react";
 import client from "../client";
 
 import { for_each_async, reload_systemd, encode_filename } from "../utils.js";

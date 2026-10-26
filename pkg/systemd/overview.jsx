@@ -9,7 +9,7 @@ import 'cockpit-dark-theme'; // once per page
 import cockpit from "cockpit";
 
 import React from 'react';
-import { createRoot } from "react-dom/client";
+import { createRoot } from "react-root";
 import { Page, PageSection, PageSectionVariants } from "@patternfly/react-core/dist/esm/components/Page/index.js";
 import { Gallery } from "@patternfly/react-core/dist/esm/layouts/Gallery/index.js";
 import { Dropdown, DropdownItem, DropdownList } from '@patternfly/react-core/dist/esm/components/Dropdown/index.js';

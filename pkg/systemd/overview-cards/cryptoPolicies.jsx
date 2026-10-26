@@ -4,7 +4,7 @@
  */
 
 import cockpit from "cockpit";
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
 import { Flex, FlexItem } from "@patternfly/react-core/dist/esm/layouts/Flex/index.js";
 import {
@@ -17,7 +17,6 @@ import { ModalError } from 'cockpit-components-inline-notification.jsx';
 import { PrivilegedButton } from "cockpit-components-privileged";
 import { ProfilesMenuDialogBody } from "./profiles-menu-dialog-body";
 import { useDialogs } from "dialogs.jsx";
-import { useInit } from "hooks";
 
 import "./cryptoPolicies.scss";
 
@@ -37,26 +36,49 @@ export const CryptoPolicyRow = () => {
     const [fipsConfigurable, setFipsConfigurable] = useState(null);
     const [shaSubPolicyAvailable, setShaSubPolicyAvailable] = useState(null);
 
-    useInit(() => {
-        cockpit.file("/proc/sys/crypto/fips_enabled").read()
-                .then(content => setFipsEnabled(content ? content.trim() === "1" : false));
-        getFipsConfigurable().then(v => setFipsConfigurable(v));
-        cockpit.file("/etc/crypto-policies/config")
-                .watch(async contents => {
-                    // Ask crypto-policies to get correct FIPS state, as that dominates the configured policy
-                    try {
-                        setCurrentCryptoPolicy((await cockpit.spawn(["update-crypto-policies", "--show"])).trim());
-                    } catch (error) {
-                        console.warn("Failed to get current crypto policy:", error.toString(),
-                                     "; falling back to /etc/crypto-policies/config");
-                        const filteredContent = contents?.split('\n').filter(line => !line.startsWith("#")).join('\n');
-                        setCurrentCryptoPolicy(filteredContent?.trim() ?? null);
-                    }
-                });
-        // RHEL-8-8 has no SHA1 subpolicy
-        cockpit.file("/usr/share/crypto-policies/policies/modules/SHA1.pmod").read()
-                .then(content => setShaSubPolicyAvailable(content ? content.trim() : false));
-    });
+    useEffect(() => {
+        let active = true;
+        let revision = 0;
+        let command;
+        const fips = cockpit.file("/proc/sys/crypto/fips_enabled");
+        const config = cockpit.file("/etc/crypto-policies/config");
+        const sha = cockpit.file("/usr/share/crypto-policies/policies/modules/SHA1.pmod");
+        fips.read().then(content => {
+            if (active)
+                setFipsEnabled(content ? content.trim() === "1" : false);
+        }).catch(error => { if (active) console.warn(error) });
+        getFipsConfigurable().then(value => {
+            if (active)
+                setFipsConfigurable(value);
+        }).catch(error => { if (active) console.warn(error) });
+        config.watch(contents => {
+            const current = ++revision;
+            command?.close();
+            command = cockpit.spawn(["update-crypto-policies", "--show"]);
+            command.then(value => {
+                if (active && current === revision)
+                    setCurrentCryptoPolicy(value.trim());
+            }).catch(error => {
+                if (active && current === revision) {
+                    console.warn("Failed to get current crypto policy:", error.toString(),
+                                 "; falling back to /etc/crypto-policies/config");
+                    const filtered = contents?.split('\n').filter(line => !line.startsWith("#")).join('\n');
+                    setCurrentCryptoPolicy(filtered?.trim() ?? null);
+                }
+            });
+        });
+        sha.read().then(content => {
+            if (active)
+                setShaSubPolicyAvailable(content ? content.trim() : false);
+        }).catch(error => { if (active) console.warn(error) });
+        return () => {
+            active = false;
+            command?.close();
+            fips.close();
+            config.close();
+            sha.close();
+        };
+    }, []);
 
     if (currentCryptoPolicy === null || fipsEnabled === null || fipsConfigurable === null)
         return null;
@@ -227,13 +249,28 @@ export const CryptoPolicyStatus = () => {
     const [fipsEnabled, setFipsEnabled] = useState(null);
     const [fipsConfigurable, setFipsConfigurable] = useState(null);
 
-    useInit(() => {
-        cockpit.file("/etc/crypto-policies/state/current")
-                .watch(content => setCurrentCryptoPolicy(content ? content.trim().split(':', 1)[0] : undefined));
-        getFipsConfigurable().then(v => setFipsConfigurable(v));
-        cockpit.file("/proc/sys/crypto/fips_enabled").read()
-                .then(content => setFipsEnabled(content ? content.trim() === "1" : false));
-    });
+    useEffect(() => {
+        let active = true;
+        const policy = cockpit.file("/etc/crypto-policies/state/current");
+        const fips = cockpit.file("/proc/sys/crypto/fips_enabled");
+        policy.watch(content => {
+            if (active)
+                setCurrentCryptoPolicy(content ? content.trim().split(':', 1)[0] : undefined);
+        });
+        getFipsConfigurable().then(value => {
+            if (active)
+                setFipsConfigurable(value);
+        }).catch(error => { if (active) console.warn(error) });
+        fips.read().then(content => {
+            if (active)
+                setFipsEnabled(content ? content.trim() === "1" : false);
+        }).catch(error => { if (active) console.warn(error) });
+        return () => {
+            active = false;
+            policy.close();
+            fips.close();
+        };
+    }, []);
 
     if (currentCryptoPolicy === null || fipsConfigurable === null)
         return null;

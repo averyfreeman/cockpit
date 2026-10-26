@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
 import { Flex, FlexItem } from "@patternfly/react-core/dist/esm/layouts/Flex/index.js";
 import { Icon } from "@patternfly/react-core/dist/esm/components/Icon/index.js";
@@ -11,7 +11,6 @@ import { ExclamationTriangleIcon } from "@patternfly/react-icons";
 
 import cockpit from "cockpit";
 
-import { useInit } from 'hooks';
 
 const _ = cockpit.gettext;
 
@@ -19,11 +18,15 @@ export const UncleanShutdownStatus = () => {
     const [uncleanShutdownId, setUncleanShutdownId] = useState(null);
     const [uncleanShutdownStatusVisible, setUncleanShutdownStatusVisible] = useState(false);
 
-    useInit(() => {
-        cockpit.spawn(
+    useEffect(() => {
+        let active = true;
+        const process = cockpit.spawn(
             ["last", "--system", "--limit=2", "--time-format=iso", "shutdown", "reboot"],
             { environ: ["LC_ALL=C"], err: "message", }
-        ).then((data) => {
+        );
+        process.then((data) => {
+            if (!active)
+                return;
             const previous_boot = data.split("\n")[1];
             if (previous_boot === undefined)
                 return;
@@ -41,8 +44,15 @@ export const UncleanShutdownStatus = () => {
                 setUncleanShutdownId(epoch);
                 setUncleanShutdownStatusVisible(epoch !== cockpit.sessionStorage.getItem("dismissed-unclean-shutdown-id"));
             }
+        }).catch(error => {
+            if (active)
+                console.warn("Could not read shutdown history:", error);
         });
-    });
+        return () => {
+            active = false;
+            process.close();
+        };
+    }, []);
 
     if (!uncleanShutdownId || !uncleanShutdownStatusVisible) {
         return null;

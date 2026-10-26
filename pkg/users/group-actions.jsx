@@ -4,7 +4,6 @@
  */
 
 import cockpit from 'cockpit';
-import React from 'react';
 
 import { DropdownItem } from '@patternfly/react-core/dist/esm/components/Dropdown/index.js';
 import { Divider } from '@patternfly/react-core/dist/esm/components/Divider/index.js';

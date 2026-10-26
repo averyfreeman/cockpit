@@ -10,7 +10,7 @@ import 'cockpit-dark-theme'; // once per page
 import cockpit from "cockpit";
 
 import React from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot } from "react-root";
 
 import { KdumpPage } from "./kdump-view.jsx";
 import * as kdumpClient from "./kdump-client.js";

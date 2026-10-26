@@ -5,7 +5,7 @@
 
 import cockpit from "cockpit";
 import React from "react";
-import { createRoot, Container } from 'react-dom/client';
+import { createRoot, Container } from 'react-root';
 
 import '../lib/patternfly/patternfly-6-cockpit.scss';
 

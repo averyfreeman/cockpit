@@ -9,7 +9,7 @@ import 'polyfills'; // once per application
 
 import cockpit from "cockpit";
 import React from "react";
-import { createRoot } from 'react-dom/client';
+import { createRoot } from 'react-root';
 
 import * as timeformat from 'timeformat';
 
@@ -38,7 +38,6 @@ import detect from "./hw-detect.js";
 
 import { superuser } from "superuser";
 import { PrivilegedButton } from "cockpit-components-privileged";
-import { useInit } from "hooks";
 
 import "./hwinfo.scss";
 
@@ -150,11 +149,14 @@ const CPUSecurityMitigationsDialog = () => {
     const [alert, setAlert] = React.useState(undefined);
     const [rebooting, setRebooting] = React.useState(false);
 
-    useInit(() => {
-        availableMitigations().then(({ available, nosmt_enabled }) => {
-            setNoSMT(nosmt_enabled);
+    React.useEffect(() => {
+        let active = true;
+        availableMitigations().then(({ nosmt_enabled }) => {
+            if (active)
+                setNoSMT(nosmt_enabled);
         });
-    });
+        return () => { active = false };
+    }, []);
 
     const saveAndReboot = () => {
         let options = [];
@@ -248,9 +250,14 @@ const CPUSecurityMitigationsDialog = () => {
 const HardwareInfo = ({ info }) => {
     const [mitigationsAvailable, setMitigationsAvailable] = React.useState(false);
 
-    useInit(() => {
-        availableMitigations().then(({ available }) => setMitigationsAvailable(available));
-    });
+    React.useEffect(() => {
+        let active = true;
+        availableMitigations().then(({ available }) => {
+            if (active)
+                setMitigationsAvailable(available);
+        });
+        return () => { active = false };
+    }, []);
 
     const Dialogs = useDialogs();
     let pci = null;

@@ -8,7 +8,7 @@ import 'polyfills'; // once per application
 import 'cockpit-dark-theme'; // once per page
 
 import React, { useState, useEffect } from "react";
-import { createRoot } from 'react-dom/client';
+import { createRoot } from 'react-root';
 import { Flex, FlexItem } from "@patternfly/react-core/dist/esm/layouts/Flex/index.js";
 import { Page, PageSection, } from "@patternfly/react-core/dist/esm/components/Page/index.js";
 import { Card, CardHeader } from "@patternfly/react-core/dist/esm/components/Card/index.js";

@@ -599,8 +599,8 @@
 
  */
 
-import React, { useState, useId } from "react";
-import { useObject, useInit, useOn } from 'hooks';
+import React, { useState, useId, useEffect } from "react";
+import { useOn } from 'hooks';
 import { EventEmitter } from 'cockpit/event';
 
 import cockpit from "cockpit";
@@ -684,10 +684,10 @@ function state_path(state: DialogFieldState): string {
 }
 
 export class DialogField<T> {
-    /* eslint-disable no-use-before-define */
+    /* oxlint-disable no-use-before-define */
     #dialog: DialogState<unknown>;
     #state: DialogFieldState;
-    /* eslint-enable */
+    /* oxlint-enable */
     #getter: () => T;
     #setter: (val: T) => void;
     #trigger: () => void;
@@ -953,9 +953,9 @@ export class DialogState<V> extends EventEmitter<DialogStateEvents> {
 
     #top_state: DialogFieldState;
 
-    /* eslint-disable no-use-before-define */
+    /* oxlint-disable no-use-before-define */
     #validate_callback: undefined | ((dlg: DialogState<V>) => void);
-    /* eslint-enable */
+    /* oxlint-enable */
 
     constructor(init: V, validate: undefined | ((dlg: DialogState<V>) => void)) {
         debug("open");
@@ -1472,13 +1472,11 @@ export function useDialogState<V extends object>(
     init: V | (() => V),
     validate?: undefined | ((dlg: DialogState<V>) => void),
 ) : DialogState<V> {
-    const dlg = useObject(
-        () => new DialogState(
+    const [dlg] = useState(
+        () => new DialogState<V>(
             typeof init == "function" ? init() : init,
             validate
-        ),
-        null,
-        []
+        )
     );
     useOn(dlg, "changed");
     return dlg;
@@ -1490,16 +1488,20 @@ export function useDialogState_async<V extends object>(
 ) : null | DialogError | DialogState<V> {
     const [dlg, setDlg] = useState<null | DialogError | DialogState<V>>(null);
     useOn((dlg instanceof DialogError ? null : dlg), "changed");
-    useInit(async () => {
-        try {
-            setDlg(new DialogState<V>(await init(), validate));
-        } catch (ex) {
-            if (ex instanceof DialogError)
-                setDlg(ex);
-            else
-                setDlg(DialogError.fromError(_("Error during initialization"), ex));
-        }
-    });
+    // Initialization is tied to this dialog instance, like useState's initializer.
+    const [initialize] = useState(() => init);
+    const [initialValidate] = useState(() => validate);
+    useEffect(() => {
+        let active = true;
+        initialize().then(values => {
+            if (active)
+                setDlg(new DialogState<V>(values, initialValidate));
+        }).catch(ex => {
+            if (active)
+                setDlg(ex instanceof DialogError ? ex : DialogError.fromError(_("Error during initialization"), ex));
+        });
+        return () => { active = false };
+    }, [initialize, initialValidate]);
     return dlg;
 }
 

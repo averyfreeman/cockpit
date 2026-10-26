@@ -4,7 +4,7 @@
  */
 
 import cockpit from "cockpit";
-import React, { useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { Alert, AlertActionCloseButton, AlertActionLink } from "@patternfly/react-core/dist/esm/components/Alert/index.js";
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
 import { DataList, DataListAction, DataListCell, DataListItem, DataListItemCells, DataListItemRow } from "@patternfly/react-core/dist/esm/components/DataList/index.js";
@@ -17,7 +17,6 @@ import { RebootingIcon } from "@patternfly/react-icons";
 import { get_manifest_config_matchlist } from "utils";
 import { read_os_release } from "os-release";
 import { EmptyStatePanel } from "cockpit-components-empty-state.jsx";
-import { useInit } from "hooks";
 
 import { ProgressReporter, icon_url, show_error, launch, ProgressBar, CancelButton } from "./utils";
 import { ActionButton } from "./application.jsx";
@@ -153,10 +152,12 @@ export const ApplicationList = ({ metainfo_db, appProgress, appProgressTitle, ac
         comps.push(metainfo_db.components[id]);
     comps.sort((a, b) => a.name.localeCompare(b.name));
 
-    async function check_missing_data(packages) {
+    async function check_missing_data(packages, isActive = () => true) {
         try {
             const packagemanager = await getPackageManager();
-            setDataPackagesInstalled(await packagemanager.is_installed(packages));
+            const installed = await packagemanager.is_installed(packages);
+            if (isActive())
+                setDataPackagesInstalled(installed);
         } catch (e) {
             console.warn("Failed to check missing AppStream metadata packages:", e.toString());
         }
@@ -171,10 +172,19 @@ export const ApplicationList = ({ metainfo_db, appProgress, appProgressTitle, ac
         return [configPackages, dataPackages];
     }
 
-    useInit(async () => {
+    const initialize = useEffectEvent(async isActive => {
         const [config, data] = await get_packages();
-        await check_missing_data([...config, ...data]);
+        if (isActive())
+            await check_missing_data([...config, ...data], isActive);
     });
+    useEffect(() => {
+        let active = true;
+        initialize(() => active).catch(error => {
+            if (active)
+                console.warn("Could not initialize application metadata:", error);
+        });
+        return () => { active = false };
+    }, []);
 
     async function refresh() {
         const [configPackages, dataPackages] = await get_packages();

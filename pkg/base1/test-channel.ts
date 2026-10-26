@@ -203,7 +203,7 @@ export class TextEchoChannelDefaultArg extends EchoChannel<string> {
 }
 
 export class TextEchoChannelTrivial extends EchoChannel<string> {
-    // eslint-disable-next-line no-useless-constructor
+    // oxlint-disable-next-line no-useless-constructor
     constructor() {
         super();
     }
@@ -276,7 +276,7 @@ export class BrokenBinaryEchoChannelWrongConstructor extends EchoChannel<Uint8Ar
 }
 
 export class BrokenBinaryEchoChannelTrivialConstructor extends EchoChannel<Uint8Array> {
-    // eslint-disable-next-line no-useless-constructor
+    // oxlint-disable-next-line no-useless-constructor
     constructor() {
         // @ts-expect-error must specify binary: true for Uint8Array channel
         super();

@@ -40,7 +40,9 @@ export class FileAutoComplete extends React.Component<FileAutoCompleteProps, Fil
     };
 
     allowFilesUpdate: boolean;
-    debouncedChange: (value: string) => void;
+    debouncedChange: ReturnType<typeof debounce<(value: string) => void>>;
+    listingChannel: cockpit.Channel<string> | null = null;
+    requestId = 0;
 
     constructor(props: FileAutoCompleteProps) {
         super(props);
@@ -99,26 +101,37 @@ export class FileAutoComplete extends React.Component<FileAutoCompleteProps, Fil
 
     componentWillUnmount() {
         this.allowFilesUpdate = false;
+        this.requestId++;
+        this.debouncedChange.cancel();
+        this.listingChannel?.close();
+        this.listingChannel = null;
     }
 
     updateFiles(path: string) {
         if (this.state.directory == path)
             return;
 
+        const requestId = ++this.requestId;
+        this.listingChannel?.close();
         const channel = cockpit.channel({
             payload: "fslist1",
             path,
             superuser: this.props.superuser,
             watch: false,
         });
+        this.listingChannel = channel;
         const results: FileEntry[] = [];
 
         channel.addEventListener("ready", () => {
-            this.finishUpdate(results, null, path);
+            if (requestId === this.requestId)
+                this.finishUpdate(results, null, path);
         });
 
         channel.addEventListener("close", (_ev, data) => {
-            this.finishUpdate(results, data.message as string | null, path);
+            if (requestId === this.requestId) {
+                this.listingChannel = null;
+                this.finishUpdate(results, data.message as string | null, path);
+            }
         });
 
         channel.addEventListener("message", (_ev, data) => {

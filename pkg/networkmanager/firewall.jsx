@@ -7,7 +7,7 @@ import '../lib/patternfly/patternfly-6-cockpit.scss';
 import 'cockpit-dark-theme'; // once per page
 import cockpit from "cockpit";
 import React from 'react';
-import { createRoot } from "react-dom/client";
+import { createRoot } from "react-root";
 import { Alert } from "@patternfly/react-core/dist/esm/components/Alert/index.js";
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
 import { Breadcrumb, BreadcrumbItem } from "@patternfly/react-core/dist/esm/components/Breadcrumb/index.js";

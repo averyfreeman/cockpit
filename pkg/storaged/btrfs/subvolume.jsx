@@ -4,7 +4,6 @@
  */
 
 import cockpit from "cockpit";
-import React from "react";
 
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
 import { CardBody, CardHeader } from "@patternfly/react-core/dist/esm/components/Card/index.js";

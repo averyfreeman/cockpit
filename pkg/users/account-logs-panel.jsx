@@ -4,21 +4,24 @@
  */
 
 import cockpit from 'cockpit';
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Card, CardBody, CardTitle } from "@patternfly/react-core/dist/esm/components/Card/index.js";
 import { ListingTable } from 'cockpit-components-table.jsx';
 
 import * as timeformat from "timeformat";
-import { useInit } from "hooks";
 
 const _ = cockpit.gettext;
 
 export function AccountLogs({ name }) {
     const [logins, setLogins] = useState([]);
-    useInit(() => {
-        cockpit.spawn(["last", "--time-format", "iso", "-n25", "--fullnames", name], { environ: ["LC_ALL=C"] })
+    useEffect(() => {
+        let active = true;
+        const process = cockpit.spawn(["last", "--time-format", "iso", "-n25", "--fullnames", name], { environ: ["LC_ALL=C"] });
+        process
                 .then(data => {
+                    if (!active)
+                        return;
                     let logins = [];
                     data.split('\n').forEach(line => {
                         // Exclude still logged in and non user lines
@@ -51,7 +54,14 @@ export function AccountLogs({ name }) {
                     logins = logins.slice(0, 15);
                     setLogins(logins);
                 })
-                .catch(ex => console.error("Failed to call last:", ex)); // not-covered: OS error
+                .catch(ex => {
+                    if (active)
+                        console.error("Failed to call last:", ex);
+                }); // not-covered: OS error
+        return () => {
+            active = false;
+            process.close();
+        };
     }, [name]);
 
     return (

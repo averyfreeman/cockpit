@@ -2,7 +2,7 @@
  * Copyright (C) 2019 Red Hat, Inc.
  * SPDX-License-Identifier: LGPL-2.1-or-later
  */
-import React, { useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 import { Card, CardBody, CardTitle } from "@patternfly/react-core/dist/esm/components/Card/index.js";
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
 import {
@@ -24,7 +24,6 @@ import { RealmdClient, RealmButton } from "./realmd.jsx";
 import { TunedPerformanceProfile } from './tuned-dialog.jsx';
 import { CryptoPolicyRow } from './cryptoPolicies.jsx';
 import { useDialogs } from "dialogs.jsx";
-import { useInit } from "hooks";
 
 import "./configurationCard.scss";
 
@@ -140,21 +139,12 @@ const SystemInformationSshKeys = () => {
                 });
     }
 
-    function create_keyUpdater() {
-        /*
-         * Yes, we do refresh the keys while the dialog is open.
-         * It may occur that sshd is not running at the point when
-         * we try, or in rare cases the keys may change.
-         */
-        keysUpdate();
-        return window.setInterval(keysUpdate, 10 * 1000);
-    }
-
-    function destroy_keyUpdater(interval) {
-        window.clearInterval(interval);
-    }
-
-    useObject(create_keyUpdater, destroy_keyUpdater, []);
+    const refreshKeys = useEffectEvent(keysUpdate);
+    useEffect(() => {
+        refreshKeys();
+        const interval = window.setInterval(refreshKeys, 10 * 1000);
+        return () => window.clearInterval(interval);
+    }, []);
 
     let body = null;
     if (error)
@@ -201,12 +191,15 @@ const PageSystemInformationChangeHostname = () => {
     const [init_pretty, set_init_pretty] = useState("");
     const [error, set_error] = useState([]);
 
-    useInit(() => {
+    useEffect(() => {
+        let active = true;
         const client = cockpit.dbus('org.freedesktop.hostname1', { superuser: "try" });
         const hostname_proxy = client.proxy();
 
         hostname_proxy.wait()
                 .then(() => {
+                    if (!active)
+                        return;
                     const initial_hostname = hostname_proxy.StaticHostname || "";
                     const initial_pretty_hostname = hostname_proxy.PrettyHostname || "";
 
@@ -215,8 +208,15 @@ const PageSystemInformationChangeHostname = () => {
                     set_init_hostname(initial_hostname);
                     set_pretty(initial_pretty_hostname);
                     set_init_pretty(initial_pretty_hostname);
+                }).catch(error => {
+                    if (active)
+                        set_error([String(error)]);
                 });
-    });
+        return () => {
+            active = false;
+            client.close();
+        };
+    }, []);
 
     function onPrettyChanged(value) {
         // Whenever the pretty host name has changed (e.g. the user has edited it), we compute a new

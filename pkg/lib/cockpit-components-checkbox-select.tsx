@@ -29,7 +29,7 @@ Copyright (c) 2019 Red Hat, Inc.
 
 */
 
-/* eslint-disable */
+/* oxlint-disable */
 
 import React from 'react';
 import { Badge } from "@patternfly/react-core/dist/esm/components/Badge/index.js";
@@ -43,7 +43,7 @@ export interface CheckboxSelectOption<T> extends Omit<SelectOptionProps, 'conten
   value: T;
 }
 
-export interface CheckboxSelectProps<T> extends Omit<SelectProps, 'toggle' | 'onSelect'> {
+export interface CheckboxSelectProps<T> extends Omit<SelectProps, 'toggle' | 'onSelect' | 'onToggle'> {
   /** Options of the select. */
   options?: CheckboxSelectOption<T>[];
   /** Currently checked options */

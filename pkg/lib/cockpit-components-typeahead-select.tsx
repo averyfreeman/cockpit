@@ -60,7 +60,7 @@ Copyright (c) 2019 Red Hat, Inc.
 
 */
 
-/* eslint-disable */
+/* oxlint-disable */
 
 import cockpit from "cockpit";
 import React from 'react';
@@ -103,9 +103,11 @@ export type TypeaheadSelectOption = TypeaheadSelectMenuOption |
                                     TypeaheadSelectDividerOption |
                                     TypeaheadSelectHeaderOption;
 
-export interface TypeaheadSelectProps extends Omit<SelectProps, 'toggle' | 'onSelect'> {
-  /** @hide Forwarded ref */
-  innerRef?: React.Ref<any>;
+export interface TypeaheadSelectProps extends Omit<SelectProps, 'toggle' | 'onSelect' | 'onToggle'> {
+  /** Ref to the select menu. */
+  ref?: React.Ref<HTMLDivElement>;
+  /** @deprecated Use ref instead. */
+  innerRef?: React.Ref<HTMLDivElement>;
   /** Options of the select */
   selectOptions: TypeaheadSelectOption[];
   /** Is the selected option valid even when it is not in the list? */
@@ -168,6 +170,7 @@ const defaultFilterFunction = (filterValue: string, options: TypeaheadSelectOpti
 };
 
 export const TypeaheadSelectBase: React.FunctionComponent<TypeaheadSelectProps> = ({
+  ref,
   innerRef,
   selectOptions,
   selectedIsTrusted,
@@ -188,12 +191,13 @@ export const TypeaheadSelectBase: React.FunctionComponent<TypeaheadSelectProps> 
   toggleProps,
   ...props
 }: TypeaheadSelectProps) => {
+  const listboxId = React.useId();
   const [isOpen, setIsOpen] = React.useState(false);
   const [filterValue, setFilterValue] = React.useState<string>('');
   const [isFiltering, setIsFiltering] = React.useState<boolean>(false);
   const [focusedItemIndex, setFocusedItemIndex] = React.useState<number | null>(null);
   const [activeItemId, setActiveItemId] = React.useState<string | null>(null);
-  const textInputRef = React.useRef<HTMLInputElement>();
+  const textInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const NO_RESULTS = 'no results';
 
@@ -283,13 +287,12 @@ export const TypeaheadSelectBase: React.FunctionComponent<TypeaheadSelectProps> 
       openMenu();
     }
     // Don't update on openMenu changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [isFiltering]);
 
   const setActiveAndFocusedItem = (itemIndex: number) => {
     setFocusedItemIndex(itemIndex);
-    const focusedItem = filteredSelections[itemIndex] as TypeaheadSelectMenuOption;
-    setActiveItemId(String(focusedItem.value));
+    setActiveItemId(`${listboxId}-option-${itemIndex}`);
   };
 
   const resetActiveAndFocusedItem = () => {
@@ -466,7 +469,7 @@ export const TypeaheadSelectBase: React.FunctionComponent<TypeaheadSelectProps> 
           {...(activeItemId && { 'aria-activedescendant': activeItemId })}
           role="combobox"
           isExpanded={isOpen}
-          aria-controls="select-typeahead-listbox"
+          aria-controls={listboxId}
         />
         <TextInputGroupUtilities
           {...(!(isFiltering && filterValue) && !(selected && onClearSelection) ? { style: { display: 'none' } } : {})}
@@ -485,10 +488,10 @@ export const TypeaheadSelectBase: React.FunctionComponent<TypeaheadSelectProps> 
       onOpenChange={(isOpen) => !isOpen && closeMenu()}
       toggle={toggle}
       variant="typeahead"
-      ref={innerRef}
+      ref={ref ?? innerRef}
       {...props}
     >
-      <SelectList>
+      <SelectList id={listboxId}>
         {filteredSelections.map((option, index) => {
           if (option.decorator == "divider")
               return <Divider key={option.key} component="li" />;
@@ -505,7 +508,7 @@ export const TypeaheadSelectBase: React.FunctionComponent<TypeaheadSelectProps> 
 
           const { content, value, ...props } = option;
           return (
-            <SelectOption key={value} value={value} isFocused={focusedItemIndex === index} {...props}>
+            <SelectOption key={value} value={value} isFocused={focusedItemIndex === index} {...props} id={`${listboxId}-option-${index}`}>
               {content}
             </SelectOption>
           );
@@ -517,8 +520,6 @@ export const TypeaheadSelectBase: React.FunctionComponent<TypeaheadSelectProps> 
 };
 TypeaheadSelectBase.displayName = 'TypeaheadSelectBase';
 
-export const TypeaheadSelect = React.forwardRef((props: TypeaheadSelectProps, ref: React.Ref<any>) => (
-  <TypeaheadSelectBase {...props} innerRef={ref} />
-));
+export const TypeaheadSelect = TypeaheadSelectBase;
 
 TypeaheadSelect.displayName = 'TypeaheadSelect';

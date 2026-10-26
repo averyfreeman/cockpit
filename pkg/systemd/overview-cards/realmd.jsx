@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 import { Alert, AlertActionLink } from "@patternfly/react-core/dist/esm/components/Alert/index.js";
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
@@ -374,7 +374,7 @@ const JoinDialog = ({ realmd_client }) => {
     };
 
     // initial auto-detection of domain name
-    useEffect(() => checkAddress(""), []); // eslint-disable-line react-hooks/exhaustive-deps
+    useEffect(() => checkAddress(""), []); // oxlint-disable-line react-hooks/exhaustive-deps
 
     const join_disabled = pending || addressValid !== "success" || !admin || !kerberosMembership;
 

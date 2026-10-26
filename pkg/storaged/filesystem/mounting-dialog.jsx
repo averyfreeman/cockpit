@@ -6,7 +6,6 @@
 import cockpit from "cockpit";
 import client from "../client.js";
 
-import React from "react";
 import { FormHelperText } from "@patternfly/react-core/dist/esm/components/Form/index.js";
 import { HelperText, HelperTextItem, } from "@patternfly/react-core/dist/esm/components/HelperText/index.js";
 import { ExclamationTriangleIcon, InfoCircleIcon } from "@patternfly/react-icons";

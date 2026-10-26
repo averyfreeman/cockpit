@@ -1,5 +1,6 @@
 import contextlib
 import glob
+import json
 import os
 import re
 import subprocess
@@ -99,6 +100,42 @@ async def test_browser(coverage_report: CoverageReport, html: str) -> None:
         coverage = await browser.cdp("Profiler.takePreciseCoverage")
         lcov.write_lcov(coverage['result']['result'], outlabel=re.sub(r'[^A-Za-z0-9]+', '-', html))
         coverage_report(coverage['result'])
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(('page', 'selector'), [
+    ('playground/remote.html', '#app #host'),
+    ('playground/react-patterns.html', '#demo-typeahead input'),
+])
+async def test_react_application_startup(page: str, selector: str) -> None:
+    """Exercise distributed React bundles with the separately loaded cockpit.js."""
+    async with (
+        spawn_test_server() as base_url,
+        ChromiumBidi(headless=os.environ.get('TEST_SHOW_BROWSER', '0') == '0') as browser
+    ):
+        await browser.bidi('browsingContext.navigate', context=browser.context,
+                           url=f'{base_url}dist/{page}', wait='complete')
+        result = await browser.bidi(
+            'script.evaluate',
+            expression=f"""new Promise(resolve => {{
+                const observer = new MutationObserver(check);
+                const timer = setTimeout(() => {{ observer.disconnect(); resolve(false); }}, 10000);
+                function check() {{
+                    if (document.querySelector({json.dumps(selector)})) {{
+                        observer.disconnect();
+                        clearTimeout(timer);
+                        resolve(true);
+                    }}
+                }}
+                observer.observe(document, {{ childList: true, subtree: true }});
+                check();
+            }})""",
+            target={'context': browser.context}, awaitPromise=True, timeout=15
+        )
+        assert result['result'] is True, f'{page} did not render its React interface'
+        errors = [message.text for message in browser.logs
+                  if message.level == 'error' and message.type in ('javascript', 'console')]
+        assert not errors, '\n'.join(errors)
 
 
 # run test-timeformat.ts in different time zones: west/UTC/east

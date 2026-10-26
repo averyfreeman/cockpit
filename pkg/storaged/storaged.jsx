@@ -9,7 +9,7 @@ import 'cockpit-dark-theme'; // once per page
 
 import cockpit from "cockpit";
 import React from "react";
-import { createRoot } from 'react-dom/client';
+import { createRoot } from 'react-root';
 import { ExclamationCircleIcon } from "@patternfly/react-icons";
 
 import { EmptyStatePanel } from "cockpit-components-empty-state.jsx";

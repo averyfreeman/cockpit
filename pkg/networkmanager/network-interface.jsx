@@ -4,7 +4,7 @@
  */
 import cockpit from "cockpit";
 import React, { useContext, useEffect, useRef, useState } from "react";
-import { useEvent, useInit } from "hooks";
+import { useEvent } from "hooks";
 import { Breadcrumb, BreadcrumbItem } from "@patternfly/react-core/dist/esm/components/Breadcrumb/index.js";
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
 import { Card, CardBody, CardHeader, CardTitle } from '@patternfly/react-core/dist/esm/components/Card/index.js';
@@ -194,7 +194,7 @@ const WiFiConnectDialog = ({ dev, model, ssid: knownSsid, ap }) => {
                         <DialogPasswordInput
                             label={_("Password")}
                             field={dlg.field("password")}
-                            autoFocus={!isHidden} // eslint-disable-line jsx-a11y/no-autofocus
+                            autoFocus={!isHidden} // oxlint-disable-line jsx-a11y/no-autofocus
                         />
                     )}
                 </Form>
@@ -234,12 +234,12 @@ export const NetworkInterfacePage = ({
     const Dialogs = useDialogs();
 
     // Trigger (passive) scan on page load for wireless devices on page load
-    useInit(() => {
+    useEffect(() => {
         if (dev?.DeviceType === '802-11-wireless') {
             utils.debug("Requesting initial WiFi scan for", dev_name);
             dev.request_scan();
         }
-    });
+    }, [dev, dev_name]);
 
     // WiFi scanning: re-enable button when APs change or after timeout
     useEffect(() => {

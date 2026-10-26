@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
-/* eslint-disable indent,no-empty */
+/* oxlint-disable no-empty */
 
 import { base64_encode, base64_decode } from './cockpit/_internal/base64';
 import { Channel } from './cockpit/_internal/channel';
@@ -473,18 +473,14 @@ function factory() {
 
         self.close = function() {
             window.removeEventListener("storage", changed, true);
+            window.removeEventListener("pagehide", self.close);
             unclaim();
         };
 
         window.addEventListener("storage", changed, true);
 
-        /* Always clear this data on unload */
-        window.addEventListener("beforeunload", function() {
-            self.close();
-        });
-        window.addEventListener("unload", function() {
-            self.close();
-        });
+        /* Release ownership when navigating away, including BFCache entry. */
+        window.addEventListener("pagehide", self.close);
 
         if (trigger.getItem(key))
             callback();

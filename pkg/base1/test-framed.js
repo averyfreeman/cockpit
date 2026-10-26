@@ -15,7 +15,7 @@ function parent_window(assert) {
     let initialized = false;
     let frame;
 
-    cockpit.transport.filter(function (message, channel, control) { // eslint-disable-line array-callback-return
+    cockpit.transport.filter(function (message, channel, control) { // oxlint-disable-line array-callback-return
         if (initialized)
             frame.postMessage(message, cockpit.transport.origin);
     });

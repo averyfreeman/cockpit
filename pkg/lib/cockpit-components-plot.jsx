@@ -5,7 +5,7 @@
 
 import cockpit from "cockpit";
 
-import React, { useState, useRef, useLayoutEffect } from 'react';
+import { useState, useRef, useLayoutEffect } from 'react';
 import { useEvent } from "hooks.js";
 
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
@@ -283,7 +283,7 @@ export const ZoomControls = ({ plot_state }) => {
 const useLayoutSize = (init_width, init_height) => {
     const ref = useRef(null);
     const [size, setSize] = useState({ width: init_width, height: init_height });
-    /* eslint-disable react-hooks/exhaustive-deps */
+    /* oxlint-disable react-hooks/exhaustive-deps */
     useLayoutEffect(() => {
         if (ref.current) {
             const rect = ref.current.getBoundingClientRect();
@@ -295,7 +295,7 @@ const useLayoutSize = (init_width, init_height) => {
                 setSize({ width: rect.width, height: rect.height });
         }
     });
-    /* eslint-enable */
+    /* oxlint-enable */
     return [ref, size];
 };
 

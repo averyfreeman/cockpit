@@ -4,7 +4,6 @@
  */
 
 import cockpit from 'cockpit';
-import React from 'react';
 import { useObject, useEvent } from 'hooks.js';
 
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";

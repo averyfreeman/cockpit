@@ -4,7 +4,8 @@
  */
 
 import cockpit from "cockpit";
-import React from "react";
+import { useEffect, useState } from "react";
+import { useDeepEqualMemo } from "hooks";
 
 import { Badge } from "@patternfly/react-core/dist/esm/components/Badge/index.js";
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
@@ -35,13 +36,13 @@ export class JournalOutput {
                 return;
 
             // Ignore if text is being selected - less than 3 characters most likely means misclick
-            const selection = window.getSelection().toString();
+            const selection = window.getSelection()?.toString();
             if (selection && selection.length > 2 && full_content.indexOf(selection) >= 0)
                 return;
         }
 
         // only consider enter button for keyboard events
-        if (ev.type === 'KeyDown' && ev.key !== "Enter")
+        if (ev.type === 'keydown' && ev.key !== "Enter")
             return;
 
         cockpit.jump("system/logs#/" + cursor + "?parent_options=" + JSON.stringify(this.search_options));
@@ -116,48 +117,52 @@ export class JournalOutput {
     }
 }
 
-export class LogsPanel extends React.Component {
-    constructor() {
-        super();
-        this.state = { logs: [] };
-    }
+/**
+ * @param {{ match: string[], max: number, title: import('react').ReactNode,
+ *           search_options?: Record<string, string>, goto_url?: string,
+ *           emptyMessage?: string | import('react').ReactNode[], className?: string }} props
+ */
+export function LogsPanel({ match, max, search_options, goto_url, title, emptyMessage = "" }) {
+    const [logs, setLogs] = useState(/** @type {import('react').ReactNode[]} */ ([]));
+    const stableMatch = useDeepEqualMemo(match);
+    const searchOptions = useDeepEqualMemo(search_options);
 
-    componentDidMount() {
-        this.journalctl = journal.journalctl(this.props.match, { count: this.props.max });
+    useEffect(() => {
+        let active = true;
+        setLogs([]);
+        const journalctl = journal.journalctl(stableMatch, { count: max });
+        const output = new JournalOutput(searchOptions);
+        const renderer = journal.renderer(output);
 
-        const out = new JournalOutput(this.props.search_options);
-        const render = journal.renderer(out);
-
-        this.journalctl.stream((entries) => {
-            for (let i = 0; i < entries.length; i++)
-                render.prepend(entries[i]);
-            render.prepend_flush();
-            // "max + 1" since there is always a date header and we
-            // want to show "max" entries below it.
-            out.limit(this.props.max + 1);
-            this.setState({ logs: out.logs });
+        journalctl.stream(entries => {
+            if (!active)
+                return;
+            for (const entry of entries)
+                renderer.prepend(entry);
+            renderer.prepend_flush();
+            // Keep the date header in addition to the requested number of entries.
+            output.limit(max + 1);
+            setLogs([...output.logs]);
         });
-    }
 
-    componentWillUnmount() {
-        this.journalctl.stop();
-    }
+        return () => {
+            active = false;
+            journalctl.stop();
+        };
+    }, [stableMatch, max, searchOptions]);
 
-    render() {
-        const actions = (this.state.logs.length > 0 && this.props.goto_url) && <Button variant="secondary" onClick={e => cockpit.jump(this.props.goto_url)}>{_("View all logs")}</Button>;
+    const actions = logs.length > 0 && goto_url
+        ? <Button variant="secondary" onClick={() => cockpit.jump(goto_url)}>{_("View all logs")}</Button>
+        : null;
 
-        return (
-            <Card isPlain className="cockpit-log-panel">
-                <CardHeader actions={{ actions }}>
-                    <CardTitle>{this.props.title}</CardTitle>
-                </CardHeader>
-                <CardBody className={(!this.state.logs.length && this.props.emptyMessage.length) ? "empty-message" : "contains-list"}>
-                    { this.state.logs.length ? this.state.logs : this.props.emptyMessage }
-                </CardBody>
-            </Card>
-        );
-    }
+    return (
+        <Card isPlain className="cockpit-log-panel">
+            <CardHeader actions={{ actions }}>
+                <CardTitle>{title}</CardTitle>
+            </CardHeader>
+            <CardBody className={(!logs.length && emptyMessage.length) ? "empty-message" : "contains-list"}>
+                {logs.length ? logs : emptyMessage}
+            </CardBody>
+        </Card>
+    );
 }
-LogsPanel.defaultProps = {
-    emptyMessage: [],
-};

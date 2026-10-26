@@ -176,7 +176,7 @@ function MockWebSocket(url, protocol) {
     }, 5);
 }
 
-WebSocket = MockWebSocket; // eslint-disable-line no-global-assign
+WebSocket = MockWebSocket; // oxlint-disable-line no-global-assign
 
 function check_transport (assert, base_url, application, socket, url_root) {
     const old_url = window.mock.url;

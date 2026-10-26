@@ -66,7 +66,7 @@ declare module 'cockpit' {
     /* === Events mix-in ========================= */
 
     export interface EventMap {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // oxlint-disable-next-line typescript/no-explicit-any
         [_: string]: (...args: any[]) => void;
     }
 

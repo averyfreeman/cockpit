@@ -10,6 +10,7 @@ type MessageCallback = (data: string | Uint8Array) => void;
 type FilterCallback = (message: string | ArrayBuffer, channel: string | null, control: JsonObject | null) => boolean;
 
 class TransportGlobals {
+    lifecycle_initialized = false;
     default_transport: Transport | null = null;
     reload_after_disconnect = false;
     expect_disconnect = false;
@@ -32,10 +33,6 @@ if (!document.cockpit_transport_globals)
     document.cockpit_transport_globals = new TransportGlobals();
 
 export const transport_globals = document.cockpit_transport_globals;
-
-window.addEventListener('beforeunload', () => {
-    transport_globals.expect_disconnect = true;
-}, false);
 
 function transport_debug(...args: unknown[]) {
     if (window.debugging == "all" || window.debugging?.includes("channel"))
@@ -318,8 +315,19 @@ export function ensure_transport(callback: (transport: Transport) => void) {
     }
 }
 
-/* Always close the transport explicitly: allows parent windows to track us */
-window.addEventListener("unload", () => {
-    if (transport_globals.default_transport)
-        transport_globals.default_transport.close();
-});
+// This module can occur in both cockpit.js and a page bundle. Install document
+// lifecycle handlers once, using the same globals as the shared transport.
+if (!transport_globals.lifecycle_initialized) {
+    transport_globals.lifecycle_initialized = true;
+    window.addEventListener("pagehide", () => {
+        // Explicit closure also tells a parent frame that this page is gone.
+        transport_globals.expect_disconnect = true;
+        transport_globals.default_transport?.close();
+    });
+    window.addEventListener("pageshow", event => {
+        // A restored document still contains channels bound to the closed
+        // transport. Reinitialize the page and revalidate the login session.
+        if (event.persisted)
+            window.location.reload();
+    });
+}

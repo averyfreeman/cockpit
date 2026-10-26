@@ -6,7 +6,7 @@
 import cockpit from "cockpit";
 
 import React, { useEffect } from 'react';
-import { createRoot } from "react-dom/client";
+import { createRoot } from "react-root";
 
 import {
     Modal, ModalBody, ModalFooter, ModalHeader
@@ -14,7 +14,7 @@ import {
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
 
 import { WithDialogs } from "dialogs.jsx";
-import { useInit, useEvent, useOn, useLoggedInUser } from "hooks";
+import { useEvent, useOn, useLoggedInUser } from "hooks";
 
 import { TopNav } from "./topnav.jsx";
 import { SidebarToggle, PageNav } from "./nav.jsx";
@@ -62,7 +62,11 @@ const SessionCountdownModal = () => {
     const controller = get_session_controller();
     useOn(controller, "changed");
 
-    controller.inhibit_activity_reporting(controller.countdown > 0);
+    const inhibiting = controller.countdown > 0;
+    useEffect(() => {
+        controller.inhibit_activity_reporting(inhibiting);
+        return () => controller.inhibit_activity_reporting(false);
+    }, [controller, inhibiting]);
 
     if (controller.countdown <= 0)
         return null;
@@ -85,11 +89,12 @@ const SessionCountdownModal = () => {
     );
 };
 
-const Shell = () => {
+const Shell = ({ state, host_modal_state }: {
+    state: ShellState;
+    host_modal_state: ReturnType<typeof HostModalState>;
+}) => {
     const current_user = useLoggedInUser()?.name || "";
-    const state = useInit(() => new ShellState());
     const session_controller = get_session_controller();
-    const host_modal_state = useInit(() => HostModalState());
 
     useOn(state, "update");
     useOn(session_controller, "changed");
@@ -111,6 +116,23 @@ const Shell = () => {
 
     const { countdown, problem } = session_controller;
 
+    const title = ready && current_machine && current_manifest_item
+        ? [current_manifest_item.label, (current_machine.user || current_user) + "@" + current_machine.label]
+                .filter(Boolean).join(" - ")
+        : null;
+
+    useEffect(() => {
+        if (title !== null)
+            document.title = (countdown > 0 ? "(" + countdown + ") " : "") + title;
+    }, [title, countdown]);
+
+    useEffect(() => {
+        if (ready) {
+            document.documentElement.lang = config.language;
+            document.documentElement.dir = config.language_direction || "ltr";
+        }
+    }, [ready, config.language, config.language_direction]);
+
     if (problem && !ready)
         return <EarlyFailure />;
 
@@ -118,19 +140,6 @@ const Shell = () => {
         return null;
 
     cockpit.assert(current_machine && current_manifest_item);
-
-    const title_parts = [];
-    if (current_manifest_item.label)
-        title_parts.push(current_manifest_item.label);
-    title_parts.push((current_machine.user || current_user) + "@" + current_machine.label);
-    document.title = title_parts.join(" - ");
-
-    if (countdown > 0)
-        document.title = "(" + countdown + ") " + document.title;
-
-    document.documentElement.lang = config.language;
-    if (config.language_direction)
-        document.documentElement.dir = config.language_direction;
 
     let failure = null;
     if (problem) {
@@ -227,8 +236,16 @@ function init() {
         }
     });
 
+    // These controllers own document-wide channels and listeners. Initialize
+    // them outside React rendering, so render retries cannot duplicate them.
+    get_session_controller();
+    const state = new ShellState();
+    const host_modal_state = HostModalState();
     const root = createRoot(document.getElementById("shell")!);
-    root.render(<WithDialogs><Shell /></WithDialogs>);
+    root.render(<WithDialogs><Shell state={state} host_modal_state={host_modal_state} /></WithDialogs>);
 }
 
-document.addEventListener("DOMContentLoaded", init);
+if (document.readyState === "loading")
+    document.addEventListener("DOMContentLoaded", init, { once: true });
+else
+    init();
