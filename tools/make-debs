@@ -55,6 +55,16 @@ rm -rf "$builddir"
 mkdir -p "$builddir"
 cd "$builddir"
 tar --strip-components=1 -xf "$source"
+
+# Debian's rules rebuild the JavaScript bundles from the separately packaged
+# runtime dependencies. The make-dist tarballs are produced side by side, so
+# unpack that second archive where debian/rules expects it.
+node_source="$(dirname "$source")/cockpit-node-${version}.tar.xz"
+if [ -f "$node_source" ]; then
+	mkdir -p node
+	tar --strip-components=1 -xf "$node_source" -C node
+fi
+
 cp -r tools/debian .
 # plug in our version
 sed -i "1 s/(0-/(${version}-/" debian/changelog
